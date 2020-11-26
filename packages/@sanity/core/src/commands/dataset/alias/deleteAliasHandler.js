@@ -18,7 +18,7 @@ export default async (args, context) => {
   aliasName = aliasName.startsWith(ALIAS_PREFIX) ? aliasName.substring(1) : aliasName
 
   const [fetchedAliases] = await Promise.all([aliasClient.listAliases(client)])
-  const linkedAlias = fetchedAliases.find(elem => elem.name === aliasName)
+  const linkedAlias = fetchedAliases.find((elem) => elem.name === aliasName)
   const message =
     linkedAlias && linkedAlias.datasetName
       ? `This dataset alias is linked to ${linkedAlias.datasetName}. `
@@ -27,10 +27,10 @@ export default async (args, context) => {
   await prompt.single({
     type: 'input',
     message: `${message}Are you ABSOLUTELY sure you want to delete this dataset alias?\n  Type the name of the dataset alias to confirm delete: `,
-    filter: input => `${input}`.trim(),
-    validate: input => {
+    filter: (input) => `${input}`.trim(),
+    validate: (input) => {
       return input === aliasName || 'Incorrect dataset alias name. Ctrl + C to cancel delete.'
-    }
+    },
   })
 
   // Strip out alias prefix if it exist in the string
