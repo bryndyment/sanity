@@ -4,7 +4,7 @@ export default function promptForAliasName(prompt, options = {}) {
   return prompt.single({
     type: 'input',
     message: 'Alias name:',
-    validate: name => {
+    validate: (name) => {
       const err = validateDatasetAliasName(name)
       if (err) {
         return err
@@ -12,6 +12,6 @@ export default function promptForAliasName(prompt, options = {}) {
 
       return true
     },
-    ...options
+    ...options,
   })
 }
