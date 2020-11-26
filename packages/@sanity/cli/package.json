@@ -36,9 +36,9 @@
   },
   "homepage": "https://www.sanity.io/",
   "devDependencies": {
-    "@sanity/client": "1.150.7",
-    "@sanity/resolver": "1.150.1",
-    "@sanity/util": "1.150.1",
+    "@sanity/client": "2.0.9",
+    "@sanity/resolver": "2.0.9",
+    "@sanity/util": "2.0.9",
     "boxen": "^4.1.0",
     "chalk": "^2.3.0",
     "configstore": "^5.0.1",
