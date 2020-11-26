@@ -1,28 +1,30 @@
 import React from 'react'
-import SanityFormBuilderContext from './SanityFormBuilderContext'
+import {Marker, Path, Schema, SchemaType} from '@sanity/types'
+import {FormFieldPresence} from '@sanity/base/presence'
 import {FormBuilderInput} from '../FormBuilderInput'
-import {Presence, Marker, Type} from '../typedefs'
-import {Path} from '../typedefs/path'
+import SanityFormBuilderContext from './SanityFormBuilderContext'
 import * as gradientPatchAdapter from './utils/gradientPatchAdapter'
 
 type PatchChannel = {
   subscribe: () => () => {}
-  receivePatches: (patches: Array<any>) => void
+  receivePatches: (patches: any[]) => void
 }
+
 type Props = {
   value: any | null
-  schema: any
-  type: Type
-  markers: Array<Marker>
+  schema: Schema
+  type: SchemaType
+  markers: Marker[]
   patchChannel: PatchChannel
-  onFocus: (arg0: Path) => void
+  compareValue: any
+  onFocus: (path: Path) => void
   readOnly: boolean
   onChange: (patches: any[]) => void
   filterField: (field: any) => boolean
   onBlur: () => void
   autoFocus: boolean
   focusPath: Path
-  presence: Presence[]
+  presence: FormFieldPresence[]
 }
 
 const EMPTY = []
@@ -43,7 +45,7 @@ export default class SanityFormBuilder extends React.Component<Props, {}> {
     }
   }
 
-  handleChange = patchEvent => {
+  handleChange = (patchEvent) => {
     this.props.onChange(gradientPatchAdapter.toGradient(patchEvent.patches))
   }
 
@@ -59,7 +61,8 @@ export default class SanityFormBuilder extends React.Component<Props, {}> {
       onBlur,
       focusPath,
       filterField,
-      presence
+      compareValue,
+      presence,
     } = this.props
     return (
       <SanityFormBuilderContext value={value} schema={schema} patchChannel={patchChannel}>
@@ -69,6 +72,7 @@ export default class SanityFormBuilder extends React.Component<Props, {}> {
           level={0}
           value={value}
           onFocus={onFocus}
+          compareValue={compareValue}
           onBlur={onBlur}
           markers={markers}
           focusPath={focusPath}

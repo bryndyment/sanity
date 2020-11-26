@@ -20,7 +20,7 @@ interface State {
 class Sidecar extends React.PureComponent<{}, State> {
   state = {
     isOpen: true,
-    isVisible: true
+    isVisible: true,
   }
 
   subscription: Subscription | null = null
@@ -38,7 +38,7 @@ class Sidecar extends React.PureComponent<{}, State> {
 
   handleRemoveSidecar = () => {
     this.setState({
-      isVisible: false
+      isVisible: false,
     })
   }
 
@@ -63,7 +63,7 @@ class Sidecar extends React.PureComponent<{}, State> {
   render() {
     const {isOpen, isVisible} = this.state
 
-    if (!(isSidecarEnabled && isSidecarEnabled())) {
+    if (!isVisible || !(isSidecarEnabled && isSidecarEnabled())) {
       return null
     }
 

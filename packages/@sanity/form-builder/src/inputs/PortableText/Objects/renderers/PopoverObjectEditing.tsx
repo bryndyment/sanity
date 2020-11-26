@@ -1,33 +1,38 @@
 /* eslint-disable react/prop-types */
-import React, {FunctionComponent, useMemo} from 'react'
+import React, {FunctionComponent, useEffect, useState} from 'react'
 
-import Popover from 'part:@sanity/components/dialogs/popover'
-import Stacked from 'part:@sanity/components/utilities/stacked'
-import DialogContent from 'part:@sanity/components/dialogs/content'
+import PopoverDialog from 'part:@sanity/components/dialogs/popover'
 
-import {PortableTextBlock, PortableTextChild, Type} from '@sanity/portable-text-editor'
-import {PresenceOverlay} from '@sanity/base/presence'
+import {
+  PortableTextBlock,
+  PortableTextChild,
+  PortableTextEditor,
+  Type,
+  usePortableTextEditor,
+} from '@sanity/portable-text-editor'
+import {FormFieldPresence, PresenceOverlay} from '@sanity/base/presence'
+import {Path, Marker, SchemaType} from '@sanity/types'
 import {FormBuilderInput} from '../../../../FormBuilderInput'
-import {Marker, Presence} from '../../../../typedefs'
-import {Path} from '../../../../typedefs/path'
 import {PatchEvent} from '../../../../PatchEvent'
+import {useBoundaryElement} from '../../boundaryElement'
 
 interface Props {
+  editorPath: Path
   focusPath: Path
   markers: Marker[]
   object: PortableTextBlock | PortableTextChild
   onBlur: () => void
   onChange: (patchEvent: PatchEvent, path: Path) => void
-  onClose: (event: React.SyntheticEvent) => void
-  onFocus: (arg0: Path) => void
+  onClose: () => void
+  onFocus: (path: Path) => void
   path: Path
-  presence: Presence[]
+  presence: FormFieldPresence[]
   readOnly: boolean
-  referenceElement: HTMLElement
   type: Type
 }
 
 export const PopoverObjectEditing: FunctionComponent<Props> = ({
+  editorPath,
   focusPath,
   markers,
   object,
@@ -38,41 +43,49 @@ export const PopoverObjectEditing: FunctionComponent<Props> = ({
   path,
   presence,
   readOnly,
-  referenceElement,
-  type
+  type,
 }) => {
+  const boundaryElement = useBoundaryElement()
+  const editor = usePortableTextEditor()
   const handleChange = (patchEvent: PatchEvent): void => onChange(patchEvent, path)
-  const element = useMemo(() => referenceElement, [])
+  const getEditorElement = () => {
+    const [editorObject] = PortableTextEditor.findByPath(editor, editorPath)
+    return PortableTextEditor.findDOMNode(editor, editorObject) as HTMLElement
+  }
+  const [refElement, setRefElement] = useState(getEditorElement())
+
+  useEffect(() => {
+    setRefElement(getEditorElement())
+  }, [object])
+
   return (
-    <Stacked>
-      {() => (
-        <Popover
-          placement="bottom"
-          referenceElement={element}
-          onClickOutside={onClose}
-          onEscape={onClose}
-          onClose={onClose}
-          title={type.title}
-        >
-          <DialogContent size="small" padding="none">
-            <PresenceOverlay>
-              <FormBuilderInput
-                type={type}
-                level={0}
-                readOnly={readOnly || type.readOnly}
-                value={object}
-                onChange={handleChange}
-                onFocus={onFocus}
-                onBlur={onBlur}
-                focusPath={focusPath}
-                path={path}
-                presence={presence}
-                markers={markers}
-              />
-            </PresenceOverlay>
-          </DialogContent>
-        </Popover>
-      )}
-    </Stacked>
+    <PopoverDialog
+      boundaryElement={boundaryElement}
+      fallbackPlacements={['top', 'bottom']}
+      placement="bottom"
+      portal
+      referenceElement={refElement}
+      onClickOutside={onClose}
+      onEscape={onClose}
+      onClose={onClose}
+      title={type.title}
+      size="small"
+    >
+      <PresenceOverlay margins={[0, 0, 1, 0]}>
+        <FormBuilderInput
+          focusPath={focusPath}
+          level={0}
+          markers={markers}
+          onBlur={onBlur}
+          onChange={handleChange}
+          onFocus={onFocus}
+          path={path}
+          presence={presence}
+          readOnly={readOnly || type.readOnly}
+          type={type as SchemaType}
+          value={object}
+        />
+      </PresenceOverlay>
+    </PopoverDialog>
   )
 }

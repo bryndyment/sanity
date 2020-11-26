@@ -1,16 +1,18 @@
-/* eslint-disable complexity */
+// eslint-disable-next-line import/no-unassigned-import
+import 'react-datepicker/dist/react-datepicker-cssmodules.css'
+
 import React from 'react'
 import ReactDOM from 'react-dom'
 import moment, {Moment} from 'moment'
 import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker-cssmodules.css'
+import {isValidationErrorMarker, Marker} from '@sanity/types'
 import FormField from 'part:@sanity/components/formfields/default'
 import TextInput from 'part:@sanity/components/textinputs/default'
 import Button from 'part:@sanity/components/buttons/default'
 import CalendarIcon from 'part:@sanity/base/calendar-icon'
-import {Marker} from '../../typedefs'
 import {uniqueId} from 'lodash'
 import styles from './styles/BaseDateTimeInput.css'
+
 type Props = {
   value: Moment | null
   markers: Array<Marker>
@@ -29,6 +31,7 @@ type Props = {
   level: number
   presence: any
 }
+
 const getFormat = (dateFormat, timeFormat) => dateFormat + (timeFormat ? ` ${timeFormat}` : '')
 type State = {
   inputValue: string | null
@@ -40,7 +43,7 @@ export default class BaseDateTimeInput extends React.Component<Props, State> {
   _inputId = uniqueId('BaseDateTimeInput')
   state = {
     inputValue: null,
-    isDialogOpen: false
+    isDialogOpen: false,
   }
   handleInputChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
     const inputValue = event.currentTarget.value
@@ -58,7 +61,7 @@ export default class BaseDateTimeInput extends React.Component<Props, State> {
     onChange(nextMoment)
     this.setState({inputValue: null})
   }
-  handleSetNow = event => {
+  handleSetNow = (event) => {
     this.handleDialogChange(moment())
   }
   focus() {
@@ -69,34 +72,34 @@ export default class BaseDateTimeInput extends React.Component<Props, State> {
   setDatePicker = (datePicker: DatePicker | null) => {
     this._datepicker = datePicker
   }
-  handleInputKeyDown = event => {
+  handleInputKeyDown = (event) => {
     if (event && event.key === 'Enter') {
       this.handleOpen()
     }
     return event
   }
-  handleButtonClick = event => {
+  handleButtonClick = (event) => {
     this.focus()
     this.handleOpen()
   }
   handleOpen = () => {
     this.setState({
-      isDialogOpen: true
+      isDialogOpen: true,
     })
   }
   handleClose = () => {
     this.setState({
-      isDialogOpen: false
+      isDialogOpen: false,
     })
   }
-  handleBlur = event => {
+  handleBlur = (event) => {
     this.handleClose()
     this.setState({inputValue: null})
     if (this.props.onBlur) {
       this.props.onBlur(event)
     }
   }
-  handleFocus = event => {
+  handleFocus = (event) => {
     if (this.props.onFocus) {
       this.props.onFocus(event)
     }
@@ -121,13 +124,12 @@ export default class BaseDateTimeInput extends React.Component<Props, State> {
       readOnly,
       timeStep,
       level,
-      presence
+      presence,
     } = this.props
     const {inputValue, isDialogOpen} = this.state
     const format = getFormat(dateFormat, timeFormat)
     const placeholder = this.props.placeholder || `e.g. ${moment().format(format)}`
-    const validation = markers.filter(marker => marker.type === 'validation')
-    const errors = validation.filter(marker => marker.level === 'error')
+    const errors = markers.filter(isValidationErrorMarker)
     return (
       <FormField
         markers={markers}

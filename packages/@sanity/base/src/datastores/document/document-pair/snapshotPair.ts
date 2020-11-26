@@ -1,4 +1,4 @@
-import {IdPair, SanityDocument, Mutation} from '../types'
+import {IdPair, SanityDocument, Mutation, ReconnectEvent} from '../types'
 import {filter, map, publishReplay, refCount} from 'rxjs/operators'
 import {memoizedPair} from './memoizedPair'
 import {BufferedDocumentEvent} from '../buffered-doc/createBufferedDocument'
@@ -9,7 +9,7 @@ import {DocumentVersion} from './checkoutPair'
 
 // return true if the event comes with a document snapshot
 function isSnapshotEvent(
-  event: BufferedDocumentEvent
+  event: BufferedDocumentEvent | ReconnectEvent
 ): event is SnapshotEvent & {
   version: 'published' | 'draft'
 } {
@@ -20,7 +20,7 @@ function withSnapshots(pair: DocumentVersion): DocumentVersionSnapshots {
   return {
     snapshots$: pair.events.pipe(
       filter(isSnapshotEvent),
-      map(event => event.document),
+      map((event) => event.document),
       publishReplay(1),
       refCount()
     ),
@@ -32,7 +32,7 @@ function withSnapshots(pair: DocumentVersion): DocumentVersionSnapshots {
     delete: pair.delete,
 
     mutate: pair.mutate,
-    commit: pair.commit
+    commit: pair.commit,
   }
 }
 export interface DocumentVersionSnapshots {
@@ -61,7 +61,7 @@ export const snapshotPair = memoize(
         ({published, draft}): SnapshotPair => {
           return {
             published: withSnapshots(published),
-            draft: withSnapshots(draft)
+            draft: withSnapshots(draft),
           }
         }
       ),
@@ -69,5 +69,5 @@ export const snapshotPair = memoize(
       refCount()
     )
   },
-  idPair => idPair.publishedId
+  (idPair) => idPair.publishedId
 )

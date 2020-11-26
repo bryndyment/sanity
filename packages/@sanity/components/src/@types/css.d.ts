@@ -1,4 +1,4 @@
 declare module '*.css' {
-  const shim: any
+  const shim: Record<string, string>
   export default shim
 }

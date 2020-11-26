@@ -1,81 +1,118 @@
-/* eslint-disable complexity */
-
 import classNames from 'classnames'
 import React from 'react'
+import {
+  isValidationErrorMarker,
+  isValidationMarker,
+  isValidationWarningMarker,
+  Marker,
+} from '@sanity/types'
 import ErrorOutlineIcon from 'part:@sanity/base/error-outline-icon'
-import CheckIcon from 'part:@sanity/base/check-icon'
-import {Tooltip} from 'react-tippy'
-import {Marker} from '../typedefs'
+import WarningOutlineIcon from 'part:@sanity/base/warning-outline-icon'
+import {Tooltip} from 'part:@sanity/components/tooltip'
+import {Placement} from '../types'
 import ValidationList from './ValidationList'
 
 import styles from './ValidationStatus.css'
 
-type Props = {
+interface ValidationStatusProps {
   hideTooltip?: boolean
-  showSummary?: boolean
   markers: Marker[]
+  placement?: Placement
+  showSummary?: boolean
 }
 
-export default class ValidationStatus extends React.PureComponent<Props> {
-  static defaultProps = {
-    markers: []
+function ValidationStatus(props: ValidationStatusProps & React.HTMLProps<HTMLDivElement>) {
+  const {
+    className,
+    markers = [],
+    placement = 'auto',
+    showSummary = false,
+    hideTooltip = false,
+    ...restProps
+  } = props
+  const validationMarkers = markers.filter(isValidationMarker)
+
+  if (validationMarkers.length === 0) {
+    return null
   }
 
-  render() {
-    const {markers, showSummary = false, hideTooltip = false} = this.props
-    const validation = markers.filter(marker => marker.type === 'validation')
-    const errors = validation.filter(marker => marker.level === 'error')
-    const warnings = validation.filter(marker => marker.level === 'warning')
+  const errorMarkers = validationMarkers.filter(isValidationErrorMarker)
+  const warningMarkers = validationMarkers.filter(isValidationWarningMarker)
 
-    if (errors.length === 0 && warnings.length === 0) {
-      return (
-        <div className={styles.ok}>
-          <CheckIcon />
-        </div>
-      )
-    }
+  const errorsStr = `error${errorMarkers.length === 1 ? '' : 's'}`
+  const warningsStr = `warning${warningMarkers.length === 1 ? '' : 's'}`
+  const errorText = errorMarkers.length > 0 ? `${errorMarkers.length} validation ${errorsStr}` : ''
+  const warningText = warningMarkers.length > 0 ? `${warningMarkers.length} ${warningsStr}` : ''
 
-    const errorDef = `error${errors.length === 1 ? '' : 's'}`
-    const warningDef = `warning${warnings.length === 1 ? '' : 's'}`
-    const errorText = errors.length > 0 ? `${errors.length} validation ${errorDef}` : ''
-    const warningText = warnings.length > 0 ? `${warnings.length} ${warningDef}` : ''
-    const hasBoth = errors.length > 0 && warnings.length > 0
+  const hasErrors = errorMarkers.length > 0
+  const hasWarnings = warningMarkers.length > 0
+  const hasBoth = hasErrors && hasWarnings
 
-    const tooltipText = `Found ${errorText} ${
-      warningText !== '' ? `${hasBoth ? 'and ' : ''}${warningText}` : ''
-    }`
+  const children = (
+    <div
+      {...restProps}
+      className={classNames(
+        styles.root,
+        className,
+        hasErrors && styles.error,
+        !hasErrors && hasWarnings && styles.warning
+      )}
+      tabIndex={0}
+    >
+      {hasErrors && <ErrorOutlineIcon />}
+      {!hasErrors && hasWarnings && <WarningOutlineIcon />}
+    </div>
+  )
 
-    const iconClassName = classNames(
-      styles.icon,
-      errors?.length < 1 && warnings?.length > 0 ? styles.warning : styles.error
-    )
+  if (hideTooltip) {
+    return children
+  }
 
-    const TooltipText = () => (
-      <div className={styles.tooltip}>
-        <div className={iconClassName}>
-          <ErrorOutlineIcon />
-        </div>
-        <div className={styles.tooltipText}>{tooltipText}</div>
-      </div>
-    )
+  const tooltipText = `${errorText} ${
+    warningText === '' ? '' : `${hasBoth ? 'and ' : ''}${warningText}`
+  }`
 
-    return (
-      <Tooltip
-        tabIndex={0}
-        arrow
-        theme="light"
-        className={styles.root}
-        disabled={hideTooltip}
-        html={showSummary ? <TooltipText /> : <ValidationList markers={validation} kind="simple" />}
+  const tooltipContent = (
+    <>
+      {showSummary && (
+        <ValidationSummaryTooltipContent
+          hasErrors={hasErrors}
+          hasWarnings={hasWarnings}
+          text={tooltipText}
+        />
+      )}
+
+      {!showSummary && <ValidationList markers={validationMarkers} kind="simple" />}
+    </>
+  )
+
+  return (
+    <Tooltip content={tooltipContent} placement={placement} portal>
+      {children}
+    </Tooltip>
+  )
+}
+
+export default ValidationStatus
+
+function ValidationSummaryTooltipContent({
+  hasErrors,
+  hasWarnings,
+  text,
+}: {
+  hasErrors: boolean
+  hasWarnings: boolean
+  text: string
+}) {
+  return (
+    <div className={styles.tooltip}>
+      <div
+        className={!hasErrors && hasWarnings ? styles.tooltipWarningIcon : styles.tooltipErrorIcon}
       >
-        <div className={styles.inner}>
-          {validation && validation.length > 0 && (
-            <div className={iconClassName}>
-              <ErrorOutlineIcon />
-            </div>
-          )}
-        </div>
-      </Tooltip>
-    )
-  }
+        {hasErrors && <ErrorOutlineIcon />}
+        {!hasErrors && hasWarnings && <WarningOutlineIcon />}
+      </div>
+      <div className={styles.tooltipText}>{text}</div>
+    </div>
+  )
 }

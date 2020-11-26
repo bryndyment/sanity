@@ -5,19 +5,19 @@ import {CONFIGURED_SPACES, HAS_SPACES} from './util/spaces'
 
 const basePath = ((project && project.basePath) || '').replace(/\/+$/, '')
 
-const toolRoute = route('/:tool', toolParams => {
-  const foundTool = tools.find(current => current.name === toolParams.tool)
+const toolRoute = route('/:tool', (toolParams: any) => {
+  const foundTool = tools.find((current) => current.name === toolParams.tool)
   return foundTool ? (route as any).scope(foundTool.name, '/', foundTool.router) : route('/')
 })
 
-const spaceRoute = route('/:space', params => {
-  const foundSpace = CONFIGURED_SPACES.find(sp => sp.name === params.space)
+const spaceRoute = route('/:space', ((params: any) => {
+  const foundSpace = CONFIGURED_SPACES.find((sp) => sp.name === params.space)
   return foundSpace ? toolRoute : route('/')
-})
+}) as any)
 
 const rootRouter = route(`${basePath}/`, [
   (route as any).intents('/intent'),
-  HAS_SPACES ? spaceRoute : toolRoute
+  HAS_SPACES ? spaceRoute : toolRoute,
 ])
 
 export function maybeRedirectToBase() {

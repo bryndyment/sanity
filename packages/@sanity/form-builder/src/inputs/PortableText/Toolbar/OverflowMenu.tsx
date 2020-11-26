@@ -1,14 +1,11 @@
-/* eslint-disable react/jsx-no-bind */
-
 import classNames from 'classnames'
-import React, {useEffect, useRef, useState} from 'react'
-import {Tooltip} from 'react-tippy'
 import EllipsisIcon from 'part:@sanity/base/ellipsis-icon'
-import Button from 'part:@sanity/components/buttons/default'
+import {MenuButton} from 'part:@sanity/components/menu-button'
+import React, {useEffect, useRef, useState} from 'react'
 
 import styles from './OverflowMenu.css'
 
-type Action = {
+interface Action {
   firstInGroup?: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
@@ -35,19 +32,18 @@ export function OverflowMenu(props: Props) {
     actionButtonComponent: ActionButton,
     actionMenuItemComponent: ActionMenuItem,
     actions,
-    disabled
+    disabled,
   } = props
   const actionBarRef = useRef<HTMLDivElement | null>(null)
   const [actionStates, setActionStates] = useState(
     actions.map((__, index) => ({index, visible: false}))
   )
   const actionStatesRef = useRef(actionStates)
-  const showOverflowButton = actionStates.filter(a => !a.visible).length > 0
-  const hiddenActions = actionStates.filter(a => !a.visible)
+  const showOverflowButton = actionStates.filter((a) => !a.visible).length > 0
+  const hiddenActions = actionStates.filter((a) => !a.visible)
   const lastHidden = hiddenActions.length === 1
   const ioRef = useRef<IntersectionObserver | null>(null)
   const [open, setOpen] = useState(false)
-  const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
 
   useEffect(() => {
@@ -56,17 +52,17 @@ export function OverflowMenu(props: Props) {
     if (actionBar) {
       const actionContainerEls = Array.from(actionBar.childNodes) as HTMLDivElement[]
 
-      const handleEntries: IntersectionObserverCallback = entries => {
+      const handleEntries: IntersectionObserverCallback = (entries) => {
         const newActionStates = actionStatesRef.current.slice(0)
 
-        entries.forEach(entry => {
+        entries.forEach((entry) => {
           const element = entry.target as HTMLDivElement
           const actionIndex = Array.from(actionBar.childNodes).indexOf(element)
           const visible = entry.intersectionRatio === 1
 
           newActionStates[actionIndex] = {
             index: actionIndex,
-            visible
+            visible,
           }
         })
 
@@ -81,10 +77,10 @@ export function OverflowMenu(props: Props) {
       const io = new window.IntersectionObserver(handleEntries, {
         root: actionBar,
         rootMargin: `0px ${marginRight}px 0px 0px`,
-        threshold: [0, 0.1, 0.9, 1]
+        threshold: [0, 0.1, 0.9, 1],
       })
 
-      actionContainerEls.forEach(actionContainerEl => io.observe(actionContainerEl))
+      actionContainerEls.forEach((actionContainerEl) => io.observe(actionContainerEl))
       ioRef.current = io
     }
 
@@ -112,18 +108,19 @@ export function OverflowMenu(props: Props) {
         ))}
       </div>
       <div className={styles.overflowButton} hidden={!showOverflowButton}>
-        <Tooltip
-          arrow
-          className={styles.initialValueMenuTooltip}
-          distance={13}
-          theme="light"
-          trigger={'click'}
-          position="bottom"
-          interactive
-          open={open}
-          onRequestClose={handleClose}
-          useContext
-          html={
+        <MenuButton
+          buttonProps={{
+            'aria-label': 'Menu',
+            'aria-haspopup': 'menu',
+            'aria-expanded': open,
+            'aria-controls': 'insertmenu',
+            icon: EllipsisIcon,
+            kind: 'simple',
+            padding: 'small',
+            selected: open,
+            title: 'More actions',
+          }}
+          menu={
             <div className={styles.overflowMenu}>
               {hiddenActions.map((hiddenAction, hiddenActionIndex) => {
                 const action = actions[hiddenAction.index]
@@ -142,20 +139,11 @@ export function OverflowMenu(props: Props) {
               })}
             </div>
           }
-        >
-          <Button
-            aria-label="Menu"
-            aria-haspopup="menu"
-            aria-expanded={open}
-            aria-controls={'insertmenu'}
-            icon={EllipsisIcon}
-            kind="simple"
-            onClick={handleOpen}
-            padding="small"
-            selected={open}
-            title="More actions"
-          />
-        </Tooltip>
+          open={open}
+          placement="bottom"
+          portal
+          setOpen={setOpen}
+        />
       </div>
     </div>
   )

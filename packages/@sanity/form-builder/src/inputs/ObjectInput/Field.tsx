@@ -8,6 +8,7 @@ import styles from './styles/Field.css'
 type FieldProps = {
   field: any
   value?: any
+  compareValue?: any
   onChange: (...args: any[]) => any
   onFocus: (...args: any[]) => any
   onBlur: (...args: any[]) => any
@@ -24,9 +25,9 @@ export default class Field extends React.PureComponent<FieldProps> {
   _input: any
   static defaultProps = {
     level: 0,
-    focusPath: []
+    focusPath: [],
   }
-  handleChange = event => {
+  handleChange = (event) => {
     const {field, onChange} = this.props
     if (!field.type.readOnly) {
       onChange(event, field)
@@ -37,7 +38,7 @@ export default class Field extends React.PureComponent<FieldProps> {
       this._input.focus()
     }
   }
-  setInput = input => {
+  setInput = (input) => {
     this._input = input
   }
   render() {
@@ -51,7 +52,8 @@ export default class Field extends React.PureComponent<FieldProps> {
       markers,
       focusPath,
       filterField,
-      presence
+      compareValue,
+      presence,
     } = this.props
     if (typeof value !== 'undefined') {
       const expectedType = field.type.name
@@ -88,6 +90,7 @@ export default class Field extends React.PureComponent<FieldProps> {
           focusPath={focusPath}
           filterField={filterField}
           markers={markers}
+          compareValue={compareValue}
           level={level}
           presence={presence}
           ref={this.setInput}

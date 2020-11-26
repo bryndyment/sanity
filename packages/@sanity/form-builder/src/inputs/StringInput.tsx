@@ -1,10 +1,12 @@
 import React from 'react'
+import {uniqueId} from 'lodash'
+import {StringSchemaType} from '@sanity/types'
 import TextInput from 'part:@sanity/components/textinputs/default'
 import FormField from 'part:@sanity/components/formfields/default'
 import PatchEvent, {set, unset} from '../PatchEvent'
 import {Props} from './types'
-import {uniqueId} from 'lodash'
-export default class StringInput extends React.Component<Props> {
+
+export default class StringInput extends React.Component<Props<string, StringSchemaType>> {
   _input: TextInput | null
   _inputId = uniqueId('StringInput')
   handleChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
@@ -21,8 +23,8 @@ export default class StringInput extends React.Component<Props> {
   }
   render() {
     const {value, readOnly, type, markers, level, onFocus, onBlur, presence} = this.props
-    const validation = markers.filter(marker => marker.type === 'validation')
-    const errors = validation.filter(marker => marker.level === 'error')
+    const validation = markers.filter((marker) => marker.type === 'validation')
+    const errors = validation.filter((marker) => marker.level === 'error')
     return (
       <FormField
         markers={markers}

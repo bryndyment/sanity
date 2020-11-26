@@ -1,8 +1,9 @@
 import React from 'react'
+import {Router, Tool} from '../types'
 import Navbar from './Navbar'
-import {Router, Tool, User} from '../types'
 
 interface Props {
+  createMenuIsOpen: boolean
   onCreateButtonClick: () => void
   onSearchClose: () => void
   onSearchOpen: () => void
@@ -12,38 +13,25 @@ interface Props {
   router: Router
   searchIsOpen: boolean
   tools: Tool[]
-  user?: User
 }
 
 interface NextState {
   winWidth: number
   showLabel?: boolean
   showLabelMinWidth?: number
-  showToolSwitcher?: boolean
-  showToolSwitcherMinWidth?: number
+  showToolMenu?: boolean
+  showToolMenuMinWidth?: number
 }
 
 interface State {
   showLabel: boolean
   showLabelMinWidth: number
-  showToolSwitcher: boolean
-  showToolSwitcherMinWidth: number
+  showToolMenu: boolean
+  showToolMenuMinWidth: number
 }
 
-/* eslint-disable complexity */
-/* eslint-disable max-depth */
-/* eslint-disable no-lonely-if */
-function getNextState(
-  state: {
-    showLabel: boolean
-    showLabelMinWidth: number
-    showToolSwitcher: boolean
-    showToolSwitcherMinWidth: number
-  },
-  mostRight: {},
-  winWidth: number
-) {
-  const {showLabel, showLabelMinWidth, showToolSwitcher, showToolSwitcherMinWidth} = state
+function getNextState(state: State, mostRight: number, winWidth: number): NextState {
+  const {showLabel, showLabelMinWidth, showToolMenu, showToolMenuMinWidth} = state
   const mostRightIsVisible = mostRight && mostRight <= winWidth
   const nextState: NextState = {winWidth}
 
@@ -57,35 +45,34 @@ function getNextState(
       nextState.showLabel = true
     }
 
-    if (showToolSwitcher) {
-      if (showToolSwitcherMinWidth === -1 || winWidth < showToolSwitcherMinWidth) {
-        nextState.showToolSwitcherMinWidth = winWidth
+    if (showToolMenu) {
+      if (showToolMenuMinWidth === -1 || winWidth < showToolMenuMinWidth) {
+        nextState.showToolMenuMinWidth = winWidth
       }
-    } else if (showToolSwitcherMinWidth < winWidth) {
-      nextState.showToolSwitcher = true
+    } else if (showToolMenuMinWidth < winWidth) {
+      nextState.showToolMenu = true
     }
-  } else {
-    // most-right element is NOT within viewport
-    if (showLabel) {
-      nextState.showLabel = false
-    } else if (showToolSwitcher) {
-      nextState.showToolSwitcher = false
-    }
+
+    return nextState
+  }
+
+  // most-right element is NOT within viewport
+  if (showLabel) {
+    nextState.showLabel = false
+  } else if (showToolMenu) {
+    nextState.showToolMenu = false
   }
 
   return nextState
 }
-/* eslint-enable complexity */
-/* eslint-enable max-depth */
-/* eslint-enable no-lonely-if */
 
 class NavbarContainer extends React.PureComponent<Props, State> {
   state = {
     showLabel: false,
     showLabelMinWidth: -1,
-    showToolSwitcher: false,
-    showToolSwitcherMinWidth: -1,
-    winWidth: -1
+    showToolMenu: false,
+    showToolMenuMinWidth: -1,
+    winWidth: -1,
   }
 
   loginStatusElement = null
@@ -100,19 +87,16 @@ class NavbarContainer extends React.PureComponent<Props, State> {
     this.tick()
   }
 
-  /* eslint-disable complexity */
   componentDidUpdate(prevProps: Props, prevState: State) {
-    const {showLabel, showLabelMinWidth, showToolSwitcher, showToolSwitcherMinWidth} = this.state
+    const {showLabel, showLabelMinWidth, showToolMenu, showToolMenuMinWidth} = this.state
     const didShowLabel = showLabelMinWidth === -1 && !prevState.showLabel && showLabel
-    const didShowToolSwitcher =
-      showToolSwitcherMinWidth === -1 && !prevState.showToolSwitcher && showToolSwitcher
-    const didHideLabel = showToolSwitcherMinWidth === -1 && prevState.showLabel && !showLabel
+    const didShowToolMenu = showToolMenuMinWidth === -1 && !prevState.showToolMenu && showToolMenu
+    const didHideLabel = showToolMenuMinWidth === -1 && prevState.showLabel && !showLabel
 
-    if (didShowLabel || didShowToolSwitcher || didHideLabel) {
+    if (didShowLabel || didShowToolMenu || didHideLabel) {
       this.handleCustomResize(window.innerWidth)
     }
   }
-  /* eslint-enable complexity */
 
   componentWillUnmount() {
     if (this.io) {
@@ -140,16 +124,15 @@ class NavbarContainer extends React.PureComponent<Props, State> {
 
   handleCustomResize(winWidth: number) {
     if (this.loginStatusElement) {
-      const {showToolSwitcher} = this.state
-      // console.log(this.searchElement)
-      const mostRightRect = showToolSwitcher
+      const {showToolMenu} = this.state
+      const mostRightRect = showToolMenu
         ? this.loginStatusElement.getBoundingClientRect()
         : this.searchElement.getBoundingClientRect()
-      this.setState(state => {
-        const nextState = getNextState(state, mostRightRect.left + mostRightRect.width, winWidth)
-        // console.log(nextState)
-        return nextState as State
-      })
+
+      this.setState(
+        (prevState) =>
+          getNextState(prevState, mostRightRect.left + mostRightRect.width, winWidth) as State
+      )
     }
   }
 
@@ -163,6 +146,7 @@ class NavbarContainer extends React.PureComponent<Props, State> {
 
   render() {
     const {
+      createMenuIsOpen,
       onCreateButtonClick,
       onSearchClose,
       onSearchOpen,
@@ -172,12 +156,12 @@ class NavbarContainer extends React.PureComponent<Props, State> {
       router,
       searchIsOpen,
       tools,
-      user
     } = this.props
-    const {showLabel, showToolSwitcher} = this.state
+    const {showLabel, showToolMenu} = this.state
 
     return (
       <Navbar
+        createMenuIsOpen={createMenuIsOpen}
         onCreateButtonClick={onCreateButtonClick}
         onSearchClose={onSearchClose}
         onSearchOpen={onSearchOpen}
@@ -189,9 +173,8 @@ class NavbarContainer extends React.PureComponent<Props, State> {
         router={router}
         searchIsOpen={searchIsOpen}
         showLabel={showLabel}
-        showToolSwitcher={showToolSwitcher}
+        showToolMenu={showToolMenu}
         tools={tools}
-        user={user}
       />
     )
   }

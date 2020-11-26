@@ -1,92 +1,92 @@
-import React from 'react'
-import enhanceClickOutside from 'react-click-outside'
-import Menu from 'part:@sanity/components/menus/default'
+import {UserAvatar} from '@sanity/base/components'
+import ChevronDownIcon from 'part:@sanity/base/chevron-down-icon'
 import IconSignOut from 'part:@sanity/base/sign-out-icon'
-import styles from './LoginStatus.css'
-import {Tooltip} from 'react-tippy'
+import {ClickOutside} from 'part:@sanity/components/click-outside'
+import Menu from 'part:@sanity/components/menus/default'
+import {Popover} from 'part:@sanity/components/popover'
+import Escapable from 'part:@sanity/components/utilities/escapable'
+import React from 'react'
 
-interface Props {
-  className: string
-  onLogout: () => void
-  user: {
-    email: string
-    name?: string
-    profileImage?: string
-  }
+import styles from './LoginStatus.css'
+
+interface MenuItem {
+  action: string
+  icon: React.ComponentType<Record<string, unknown>>
+  title: string
 }
 
-class LoginStatus extends React.PureComponent<Props> {
-  static defaultProps = {
-    className: undefined,
-    onLogout: undefined,
-    user: undefined
-  }
+interface LoginStatusProps {
+  onLogout: () => void
+}
 
-  constructor(props: Props) {
-    super(props)
-  }
+interface LoginStatusState {
+  isOpen: boolean
+}
 
-  handleUserMenuItemClick = item => {
-    const {onLogout} = this.props
+export default class LoginStatus extends React.PureComponent<LoginStatusProps, LoginStatusState> {
+  state = {isOpen: false}
+
+  handleUserMenuItemClick = (item: MenuItem) => {
     if (item.action === 'signOut') {
-      onLogout()
+      this.props.onLogout()
     }
+
+    this.setState({isOpen: false})
+  }
+
+  handleButtonClick = () => {
+    this.setState((state) => ({isOpen: !state.isOpen}))
+  }
+
+  handleClose = () => {
+    this.setState({isOpen: false})
   }
 
   render() {
-    const {user} = this.props
+    const menuItems: MenuItem[] = [
+      {
+        title: `Sign out`,
+        icon: IconSignOut,
+        action: 'signOut',
+      },
+    ]
 
-    if (!user) {
-      return null
-    }
-
-    let className = styles.root
-    if (this.props.className) className += this.props.className
-    return (
-      <div className={className}>
-        <Tooltip
-          trigger="click"
-          interactive
-          arrow
-          distance={1}
-          theme="light"
-          html={
-            <div className={styles.menuWrapper}>
-              <Menu
-                onAction={this.handleUserMenuItemClick}
-                items={[
-                  {
-                    title: `Sign out`,
-                    icon: IconSignOut,
-                    action: 'signOut'
-                  }
-                ]}
-                origin="top-right"
-                onClickOutside={() => {}}
-              />
-            </div>
-          }
-        >
-          <button className={styles.button} title="Show user menu" type="button">
-            <div className={styles.inner} tabIndex={-1}>
-              {user.profileImage ? (
-                <img
-                  src={user.profileImage}
-                  className={styles.userImage}
-                  alt={`${user.name}'s profile image`}
-                  data-initials={(user.name || user.email || '?').charAt(0)}
-                />
-              ) : (
-                <div className={styles.userImageMissing}>
-                  {user.name ? user.name.charAt(0) : user.email.charAt(0)}
-                </div>
-              )}
-            </div>
-          </button>
-        </Tooltip>
+    const popoverContent = (
+      <div className={styles.menuWrapper}>
+        <Menu onAction={this.handleUserMenuItemClick} items={menuItems} />
       </div>
+    )
+
+    return (
+      <ClickOutside onClickOutside={this.handleClose}>
+        {(ref) => (
+          <button
+            className={styles.root}
+            onClick={this.handleButtonClick}
+            ref={ref as React.Ref<HTMLButtonElement>}
+            title="Toggle user menu"
+            type="button"
+          >
+            <div className={styles.inner} tabIndex={-1}>
+              <Popover
+                content={popoverContent as any}
+                open={this.state.isOpen}
+                placement="bottom-end"
+              >
+                <div className={styles.avatarContainer}>
+                  <UserAvatar size="medium" tone="navbar" userId="me" />
+                </div>
+              </Popover>
+
+              <div className={styles.iconContainer}>
+                <ChevronDownIcon />
+              </div>
+            </div>
+
+            {this.state.isOpen && <Escapable onEscape={this.handleClose} />}
+          </button>
+        )}
+      </ClickOutside>
     )
   }
 }
-
-export default enhanceClickOutside(LoginStatus)

@@ -1,16 +1,16 @@
 /* eslint-disable react/prop-types */
 import React, {FunctionComponent} from 'react'
+import {Path} from '@sanity/types'
 import {PortableTextBlock, Type} from '@sanity/portable-text-editor'
 import DropDownButton from 'part:@sanity/components/buttons/dropdown'
 
-import {Path} from '@sanity/portable-text-editor/lib/types/path'
 import EditIcon from 'part:@sanity/base/edit-icon'
 import LinkIcon from 'part:@sanity/base/link-icon'
 import TrashIcon from 'part:@sanity/base/trash-icon'
 import VisibilityIcon from 'part:@sanity/base/visibility-icon'
 
-import {MenuItem, DropDownMenuItemProps} from './BlockObjectMenuItem'
 import Preview from '../../../Preview'
+import {MenuItem, DropDownMenuItemProps} from './BlockObjectMenuItem'
 
 import styles from './BlockObject.css'
 
@@ -19,7 +19,7 @@ type Props = {
   value: PortableTextBlock
   path: Path
   readOnly: boolean
-  onFocus: (arg0: Path) => void
+  onFocus: (path: Path) => void
   onClickingEdit: () => void
   onClickingDelete: () => void
 }
@@ -29,7 +29,7 @@ export const BlockObjectPreview: FunctionComponent<Props> = ({
   type,
   readOnly,
   onClickingEdit,
-  onClickingDelete
+  onClickingDelete,
 }): JSX.Element => {
   const menuItems: DropDownMenuItemProps[] = []
   if (value._ref) {
@@ -37,26 +37,26 @@ export const BlockObjectPreview: FunctionComponent<Props> = ({
       title: 'Go to reference',
       icon: LinkIcon,
       intent: 'edit',
-      params: {id: value._ref}
+      params: {id: value._ref},
     })
   }
   if (readOnly) {
     menuItems.push({
       title: 'View',
       icon: VisibilityIcon,
-      name: 'view'
+      name: 'view',
     })
   } else {
     menuItems.push({
       title: 'Edit',
       icon: EditIcon,
-      name: 'edit'
+      name: 'edit',
     })
     menuItems.push({
       title: 'Delete',
       icon: TrashIcon,
       name: 'delete',
-      color: 'danger'
+      color: 'danger',
     })
   }
 

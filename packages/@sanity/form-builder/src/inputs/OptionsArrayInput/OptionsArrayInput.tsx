@@ -1,14 +1,16 @@
 import React from 'react'
 import {get} from 'lodash'
-import Fieldset from 'part:@sanity/components/fieldsets/default'
+import {ArraySchemaType, isTitledListValue, Marker, Path} from '@sanity/types'
 import {FOCUS_TERMINATOR} from '@sanity/util/paths'
+import Fieldset from 'part:@sanity/components/fieldsets/default'
 import PatchEvent, {set, unset} from '../../PatchEvent'
 import {resolveTypeName} from '../../utils/resolveTypeName'
-import {Type} from '../../typedefs'
 import Warning from '../Warning'
 import Item from './Item'
 import styles from './styles/OptionsArrayInput.css'
 import {resolveValueWithLegacyOptionsSupport, isLegacyOptionsItem} from './legacyOptionsSupport'
+
+const changeIndicatorOptions = {compareDeep: true}
 
 function isEqual(item, otherItem) {
   if (isLegacyOptionsItem(item) || isLegacyOptionsItem(otherItem)) {
@@ -37,22 +39,28 @@ function isEqual(item, otherItem) {
   if (keys.length !== otherKeys.length) {
     return false
   }
-  return keys.every(keyName => isEqual(item[keyName], otherItem[keyName]))
+  return keys.every((keyName) => isEqual(item[keyName], otherItem[keyName]))
 }
+
 function inArray(array, candidate) {
-  return array ? array.some(item => isEqual(item, candidate)) : false
+  return array ? array.some((item) => isEqual(item, candidate)) : false
 }
+
 type OptionsArrayInputProps = {
-  type?: Type
-  markers?: any[]
-  value?: any[]
+  type: ArraySchemaType
+  markers?: Marker[]
+  value?: unknown[]
   level?: number
   readOnly?: boolean
   onChange?: (...args: any[]) => any
   presence: any
-  onFocus: (path: any[]) => void
+  onFocus: (path: Path) => void
+  onBlur: () => void
 }
-export default class OptionsArrayInput extends React.PureComponent<OptionsArrayInputProps, {}> {
+
+export default class OptionsArrayInput extends React.PureComponent<OptionsArrayInputProps> {
+  _element: Fieldset | null
+
   handleChange = (isChecked, optionValue) => {
     const {type, value = []} = this.props
     const list = get(type.options, 'list')
@@ -61,7 +69,7 @@ export default class OptionsArrayInput extends React.PureComponent<OptionsArrayI
       this.props.onChange(PatchEvent.from(unset([{_key: optionValue._key}])))
     }
     const nextValue = list
-      .filter(item =>
+      .filter((item) =>
         isEqual(optionValue, item)
           ? isChecked
           : inArray(value, resolveValueWithLegacyOptionsSupport(item))
@@ -69,22 +77,33 @@ export default class OptionsArrayInput extends React.PureComponent<OptionsArrayI
       .map(resolveValueWithLegacyOptionsSupport)
     this.props.onChange(PatchEvent.from(nextValue.length > 0 ? set(nextValue) : unset()))
   }
+
   getMemberTypeOfItem(option) {
     const {type} = this.props
     return type.of.find(
-      memberType =>
+      (memberType) =>
         memberType.name === resolveTypeName(resolveValueWithLegacyOptionsSupport(option))
     )
+  }
+
+  setElement = (el: Fieldset | null) => {
+    this._element = el
+  }
+
+  focus() {
+    if (this._element) {
+      this._element.focus()
+    }
   }
 
   handleFocus = () => {
     this.props.onFocus([FOCUS_TERMINATOR])
   }
 
-  renderInvalidOptions = options => {
+  renderInvalidOptions = (options) => {
     const invalidOptions = options
-      .filter(option => !this.getMemberTypeOfItem(option))
-      .map(option => resolveTypeName(resolveValueWithLegacyOptionsSupport(option)))
+      .filter((option) => !this.getMemberTypeOfItem(option))
+      .map((option) => resolveTypeName(resolveValueWithLegacyOptionsSupport(option)))
     const len = invalidOptions.length
     const heading = (
       <>
@@ -98,17 +117,19 @@ export default class OptionsArrayInput extends React.PureComponent<OptionsArrayI
   }
 
   render() {
-    const {type, markers, value, level, readOnly, presence} = this.props
-    const options = get(type.options, 'list')
-    const direction = get(type.options, 'direction') // vertical and horizontal
+    const {type, markers, value, level, readOnly, presence, onFocus, onBlur} = this.props
+    const options = type.options?.list || []
+    const direction = type.options?.direction // vertical and horizontal
     return (
       <Fieldset
+        ref={this.setElement}
         legend={type.title}
         description={type.description}
         markers={markers}
         presence={presence}
         level={level}
         onClick={this.handleFocus}
+        changeIndicator={changeIndicatorOptions}
       >
         <div>
           <div
@@ -124,8 +145,8 @@ export default class OptionsArrayInput extends React.PureComponent<OptionsArrayI
               const checked = inArray(value, resolveValueWithLegacyOptionsSupport(option))
               return (
                 <div
-                  className={direction === 'vertical' ? styles.itemVertical : ''}
-                  key={option._key || index}
+                  className={direction === 'vertical' ? styles.itemVertical : undefined}
+                  key={isTitledListValue(option) ? option._key || index : index}
                 >
                   <Item
                     type={optionType}
@@ -133,6 +154,8 @@ export default class OptionsArrayInput extends React.PureComponent<OptionsArrayI
                     value={option}
                     checked={checked}
                     onChange={this.handleChange}
+                    onBlur={onBlur}
+                    onFocus={onFocus}
                   />
                 </div>
               )

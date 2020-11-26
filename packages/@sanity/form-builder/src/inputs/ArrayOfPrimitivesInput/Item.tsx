@@ -1,45 +1,48 @@
 import React from 'react'
+import {Path, Marker, SchemaType} from '@sanity/types'
 import Button from 'part:@sanity/components/buttons/default'
 import TrashIcon from 'part:@sanity/base/trash-icon'
 import ValidationStatus from 'part:@sanity/components/validation/status'
 import {createDragHandle} from 'part:@sanity/components/lists/sortable'
 import DragHandleIcon from 'part:@sanity/base/drag-handle-icon'
 import {FieldPresence} from '@sanity/base/presence'
-import {Type, Marker} from '../../typedefs'
-import {Path} from '../../typedefs/path'
 import PatchEvent, {set} from '../../PatchEvent'
 import {FormBuilderInput} from '../../FormBuilderInput'
 import getEmptyValue from './getEmptyValue'
-import styles from './styles/Item.css'
+
+import styles from './Item.css'
 
 const DragHandle = createDragHandle(() => (
   <span className={styles.dragHandle}>
     <Button icon={DragHandleIcon} kind="simple" padding="small" />
   </span>
 ))
+
 type Props = {
-  type: Type
-  onChange: (arg0: PatchEvent) => void
-  onRemove: (arg0: number) => void
-  onEnterKey: (arg0: number) => void
-  onEscapeKey: (arg0: number) => void
-  onFocus: (arg0: Path) => void
+  type: SchemaType
+  onChange: (event: PatchEvent) => void
+  onRemove: (item: number) => void
+  onEnterKey: (item: number) => void
+  onEscapeKey: (item: number) => void
+  onFocus: (path: Path) => void
   onBlur: () => void
   focusPath: Path
   markers: Array<Marker>
   index: number
   value: string | number | boolean
+  compareValue?: string | number | boolean
   isSortable: boolean
   readOnly: boolean | null
   level: number
   presence: any
 }
+
 export default class Item extends React.PureComponent<Props> {
   handleRemove = () => {
     const {index, onRemove} = this.props
     onRemove(index)
   }
-  handleKeyPress = event => {
+  handleKeyPress = (event) => {
     const {index, onEnterKey} = this.props
     if (event.key === 'Enter') {
       onEnterKey(index)
@@ -73,10 +76,11 @@ export default class Item extends React.PureComponent<Props> {
       focusPath,
       onFocus,
       onBlur,
+      compareValue,
       type,
       readOnly,
       isSortable,
-      presence
+      presence,
     } = this.props
     return (
       <div className={styles.root}>
@@ -86,6 +90,7 @@ export default class Item extends React.PureComponent<Props> {
             <FormBuilderInput
               value={value}
               path={[index]}
+              compareValue={compareValue}
               markers={markers}
               focusPath={focusPath}
               onFocus={onFocus}
@@ -99,22 +104,22 @@ export default class Item extends React.PureComponent<Props> {
               presence={presence}
             />
           </div>
-          <div
-            className={styles.functions}
-            data-presence={presence.length > 0 && (!type.title || type.title === '')}
-          >
-            {markers.length >= 1 && (
-              <div className={styles.validationStatus}>
+          <div className={styles.functions}>
+            {markers.length > 0 && (
+              <div className={styles.validationStatusContainer}>
                 <ValidationStatus markers={markers} />
               </div>
             )}
+
             {(!type.title || type.title === '') && (
-              <FieldPresence presence={presence} maxAvatars={1} />
+              <div className={styles.presenceContainer}>
+                <FieldPresence presence={presence} maxAvatars={1} />
+              </div>
             )}
+
             {!readOnly && (
-              <div className={styles.deleteFunction}>
+              <div className={styles.removeButtonContainer}>
                 <Button
-                  className={styles.deleteButton}
                   icon={TrashIcon}
                   kind="simple"
                   onClick={this.handleRemove}

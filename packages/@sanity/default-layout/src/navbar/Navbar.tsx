@@ -1,25 +1,27 @@
-import React from 'react'
+import classNames from 'classnames'
+import React, {createElement} from 'react'
 import config from 'config:sanity'
 import ComposeIcon from 'part:@sanity/base/compose-icon'
 import HamburgerIcon from 'part:@sanity/base/hamburger-icon'
-import ToolSwitcher from 'part:@sanity/default-layout/tool-switcher'
-import SearchIcon from 'part:@sanity/base/search-icon'
 import {StateLink} from 'part:@sanity/base/router'
+import SearchIcon from 'part:@sanity/base/search-icon'
+import Button from 'part:@sanity/components/buttons/default'
+import {Tooltip} from 'part:@sanity/components/tooltip'
 import * as sidecar from 'part:@sanity/default-layout/sidecar?'
+import ToolMenu from 'part:@sanity/default-layout/tool-switcher'
+import {DatasetSelect} from '../components'
 import {HAS_SPACES} from '../util/spaces'
-import {Router, Tool, User} from '../types'
+import {Router, Tool} from '../types'
 import Branding from './branding/Branding'
 import LoginStatus from './loginStatus/LoginStatus'
 import SanityStatusContainer from './studioStatus/SanityStatusContainer'
-import {GlobalPresenceStatus} from './studioStatus/GlobalPresenceStatus'
+import {PresenceMenu} from './presenceMenu'
 import SearchContainer from './search/SearchContainer'
-import DatasetSelect from './datasetSelect/DatasetSelect'
-import {Tooltip} from './tooltip'
 
 import styles from './Navbar.css'
 
 interface Props {
-  searchIsOpen: boolean
+  createMenuIsOpen: boolean
   onCreateButtonClick: () => void
   onSearchClose: () => void
   onSearchOpen: () => void
@@ -29,24 +31,18 @@ interface Props {
   onToggleMenu: () => void
   onUserLogout: () => void
   router: Router
+  searchIsOpen: boolean
   showLabel: boolean
-  showToolSwitcher: boolean
+  showToolMenu: boolean
   tools: Tool[]
-  user?: User
 }
 
 const TOUCH_DEVICE = 'ontouchstart' in document.documentElement
 
-let isSidecarEnabled: () => boolean
-let SidecarToggleButton: React.ComponentType<{}>
-if (sidecar) {
-  isSidecarEnabled = sidecar.isSidecarEnabled
-  SidecarToggleButton = sidecar.SidecarToggleButton
-}
-
-function Navbar(props: Props) {
+// eslint-disable-next-line complexity
+export default function Navbar(props: Props) {
   const {
-    searchIsOpen,
+    createMenuIsOpen,
     onCreateButtonClick,
     onToggleMenu,
     onSwitchTool,
@@ -57,49 +53,59 @@ function Navbar(props: Props) {
     onSetSearchElement,
     router,
     tools,
-    user,
+    searchIsOpen,
     showLabel,
-    showToolSwitcher
+    showToolMenu,
   } = props
-  let searchClassName = styles.search
-  if (searchIsOpen) searchClassName += ` ${styles.searchIsOpen}`
-  let className = styles.root
-  if (showToolSwitcher) className += ` ${styles.withToolSwitcher}`
 
   const rootState = HAS_SPACES && router.state.space ? {space: router.state.space} : {}
+  const className = classNames(styles.root, showToolMenu && styles.withToolMenu)
+  const searchClassName = classNames(styles.search, searchIsOpen && styles.searchIsOpen)
 
   return (
     <div className={className} data-search-open={searchIsOpen}>
       <div className={styles.hamburger}>
-        <button
-          className={styles.hamburgerButton}
-          type="button"
-          title="Open menu"
+        <Button
+          aria-label="Open menu"
+          icon={HamburgerIcon}
+          kind="simple"
           onClick={onToggleMenu}
-        >
-          <div className={styles.hamburgerButtonInner} tabIndex={-1}>
-            <HamburgerIcon />
-          </div>
-        </button>
+          padding="small"
+          title="Open menu"
+          tone="navbar"
+        />
       </div>
-      <StateLink state={rootState} className={styles.branding}>
-        <Branding projectName={config && config.project.name} />
-      </StateLink>
+      <div className={styles.branding}>
+        <StateLink state={rootState} className={styles.brandingLink}>
+          <Branding projectName={config && config.project.name} />
+        </StateLink>
+      </div>
       {HAS_SPACES && (
         <div className={styles.datasetSelect}>
-          <DatasetSelect isVisible={showToolSwitcher} tone="navbar" />
+          <DatasetSelect isVisible={showToolMenu} tone="navbar" />
         </div>
       )}
-      <button className={styles.createButton} onClick={onCreateButtonClick} type="button">
-        <Tooltip disabled={TOUCH_DEVICE} content={<>Create new document</>}>
-          <div className={styles.createButtonInner} tabIndex={-1}>
-            <div className={styles.createButtonIcon}>
-              <ComposeIcon />
-            </div>
-            <span className={styles.createButtonText}>New</span>
+      <div className={styles.createButton}>
+        <Tooltip
+          disabled={TOUCH_DEVICE}
+          content={
+            (<span className={styles.createButtonTooltipContent}>Create new document</span>) as any
+          }
+          tone="navbar"
+        >
+          <div>
+            <Button
+              aria-label="Create"
+              icon={ComposeIcon}
+              kind="simple"
+              onClick={onCreateButtonClick}
+              padding="small"
+              selected={createMenuIsOpen}
+              tone="navbar"
+            />
           </div>
         </Tooltip>
-      </button>
+      </div>
       <div className={searchClassName} ref={onSetSearchElement}>
         <div>
           <SearchContainer
@@ -110,49 +116,43 @@ function Navbar(props: Props) {
         </div>
       </div>
       <div className={styles.toolSwitcher}>
-        <ToolSwitcher
-          direction="horizontal"
-          isVisible={showToolSwitcher}
-          tools={tools}
-          activeToolName={router.state.tool}
-          onSwitchTool={onSwitchTool}
-          router={router}
-          showLabel={showLabel}
-          tone="navbar"
-        />
+        {tools.length > 1 && (
+          <ToolMenu
+            direction="horizontal"
+            isVisible={showToolMenu}
+            tools={tools}
+            activeToolName={router.state.tool}
+            onSwitchTool={onSwitchTool}
+            router={router}
+            showLabel={showLabel}
+            tone="navbar"
+          />
+        )}
       </div>
       <div className={styles.extras}>{/* Insert plugins here */}</div>
       <div className={styles.sanityStatus}>
         <SanityStatusContainer />
       </div>
-      <div className={styles.presenceStatus}>
-        <GlobalPresenceStatus />
-      </div>
-      {isSidecarEnabled && isSidecarEnabled() && (
-        <div className={styles.sidecarStatus}>
-          <SidecarToggleButton />
+      {sidecar && sidecar.isSidecarEnabled && sidecar.isSidecarEnabled() && (
+        <div className={styles.helpButton}>
+          {sidecar && createElement(sidecar.SidecarToggleButton)}
         </div>
       )}
-      <div className={styles.loginStatus} ref={onSetLoginStatusElement}>
-        <LoginStatus onLogout={onUserLogout} user={user} />
+      <div className={styles.presenceStatus}>
+        <PresenceMenu />
       </div>
-      <button className={styles.searchButton} onClick={onSearchOpen} type="button">
-        <div className={styles.searchButtonInner} tabIndex={-1}>
-          <span className={styles.searchButtonIcon}>
-            <SearchIcon />
-          </span>
-          <span className={styles.searchButtonText}>Search</span>
-        </div>
-      </button>
+      <div className={styles.loginStatus} ref={onSetLoginStatusElement}>
+        <LoginStatus onLogout={onUserLogout} />
+      </div>
+      <div className={styles.searchButton}>
+        <Button
+          icon={SearchIcon}
+          kind="simple"
+          onClick={onSearchOpen}
+          padding="small"
+          tone="navbar"
+        />
+      </div>
     </div>
   )
 }
-
-Navbar.defaultProps = {
-  showLabel: true,
-  showToolSwitcher: true,
-  onSetLoginStatusElement: undefined,
-  onSetSearchElement: undefined
-}
-
-export default Navbar

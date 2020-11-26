@@ -7,7 +7,8 @@ import {route, useRouterState} from 'part:@sanity/base/router'
 import {parsePanesSegment, encodePanesSegment} from '../utils/parsePanesSegment'
 import IntentResolver from '../components/IntentResolver'
 import {EMPTY_PARAMS} from '../constants'
-import DeskTool from './DeskTool'
+import {DeskToolFeaturesProvider} from '../features'
+import DeskToolRoot from './DeskTool'
 
 function toState(pathSegment) {
   return parsePanesSegment(decodeURIComponent(pathSegment))
@@ -48,7 +49,7 @@ function DeskToolPaneStateSyncer(props) {
   return intent ? (
     <IntentResolver intent={intent} params={params} payload={payload} />
   ) : (
-    <DeskTool {...props} onPaneChange={setActivePanes} />
+    <DeskToolRoot {...props} onPaneChange={setActivePanes} />
   )
 }
 
@@ -67,7 +68,7 @@ function getIntentState(intentName, params, currentState, payload) {
       return {
         panes: paneSegments
           .slice(0, i)
-          .concat([[{id: editDocumentId, params: paneParams, payload}]])
+          .concat([[{id: editDocumentId, params: paneParams, payload}]]),
       }
     }
   }
@@ -77,7 +78,7 @@ function getIntentState(intentName, params, currentState, payload) {
 
 const strokeStyle = {
   stroke: 'currentColor',
-  strokeWidth: 1.2
+  strokeWidth: 1.2,
 }
 
 // @todo: Move to @sanity/base
@@ -102,6 +103,14 @@ function MasterDetailIcon() {
   )
 }
 
+function DeskTool() {
+  return (
+    <DeskToolFeaturesProvider>
+      <DeskToolPaneStateSyncer />
+    </DeskToolFeaturesProvider>
+  )
+}
+
 export default {
   router: route('/', [
     // "Asynchronous intent resolving" route
@@ -111,8 +120,8 @@ export default {
     route('/edit/:type/:editDocumentId', [
       route({
         path: '/:params',
-        transform: {params: {toState: legacyEditParamsToState, toPath: legacyEditParamsToPath}}
-      })
+        transform: {params: {toState: legacyEditParamsToState, toPath: legacyEditParamsToPath}},
+      }),
     ]),
 
     // The regular path - when the intent can be resolved to a specific pane
@@ -121,9 +130,9 @@ export default {
       // Legacy URLs, used to handle redirects
       children: [route('/:action', route('/:legacyEditDocumentId'))],
       transform: {
-        panes: {toState, toPath}
-      }
-    })
+        panes: {toState, toPath},
+      },
+    }),
   ]),
   canHandleIntent(intentName, params) {
     return Boolean(
@@ -136,5 +145,5 @@ export default {
   title: 'Desk',
   name: 'desk',
   icon: MasterDetailIcon,
-  component: DeskToolPaneStateSyncer
+  component: DeskTool,
 }

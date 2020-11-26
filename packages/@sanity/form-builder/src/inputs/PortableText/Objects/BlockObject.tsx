@@ -1,16 +1,15 @@
 /* eslint-disable react/prop-types */
 import React, {FunctionComponent, SyntheticEvent, useMemo} from 'react'
 import classNames from 'classnames'
+import {Path, Marker, isValidationErrorMarker} from '@sanity/types'
 import {
   PortableTextEditor,
   PortableTextBlock,
   Type,
-  RenderAttributes
+  RenderAttributes,
 } from '@sanity/portable-text-editor'
 import {FOCUS_TERMINATOR} from '@sanity/util/paths'
 
-import {Marker} from '../../../typedefs'
-import {Path} from '../../../typedefs/path'
 import {PatchEvent} from '../../../PatchEvent'
 import {BlockObjectPreview} from './BlockObjectPreview'
 import styles from './BlockObject.css'
@@ -20,7 +19,7 @@ type Props = {
   editor: PortableTextEditor
   markers: Marker[]
   onChange: (patchEvent: PatchEvent, path: Path) => void
-  onFocus: (arg0: Path) => void
+  onFocus: (path: Path) => void
   readOnly: boolean
   type: Type
   value: PortableTextBlock
@@ -33,15 +32,14 @@ export const BlockObject: FunctionComponent<Props> = ({
   onFocus,
   readOnly,
   type,
-  value
+  value,
 }): JSX.Element => {
-  const validation = markers.filter(marker => marker.type === 'validation')
-  const errors = validation.filter(marker => marker.level === 'error')
+  const errors = markers.filter(isValidationErrorMarker)
   const classnames = classNames([
     styles.root,
     focused && styles.focused,
     selected && styles.selected,
-    errors.length > 0 && styles.hasErrors
+    errors.length > 0 && styles.hasErrors,
   ])
 
   const handleClickToOpen = (event: SyntheticEvent<HTMLElement>): void => {

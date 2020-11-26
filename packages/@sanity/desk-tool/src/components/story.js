@@ -2,7 +2,6 @@
 import React, {Fragment} from 'react'
 import {storiesOf} from 'part:@sanity/storybook'
 import Dialog from 'part:@sanity/components/dialogs/fullscreen'
-import DialogContent from 'part:@sanity/components/dialogs/content'
 import Spinner from 'part:@sanity/components/loading/spinner'
 import Button from 'part:@sanity/components/buttons/default'
 import {withKnobs, boolean, number, text} from 'part:@sanity/storybook/addons/knobs'
@@ -19,9 +18,9 @@ storiesOf('@sanity/desk-tool', module)
       canContinue && {
         name: 'confirm',
         title: hasReferringDocuments ? 'Try to delete anyway' : 'Delete now',
-        color: 'danger'
+        color: 'danger',
       },
-      {name: 'cancel', title: 'Keep', kind: 'simple'}
+      {name: 'cancel', title: 'Keep', kind: 'simple'},
     ].filter(Boolean)
     const title = isCheckingReferringDocuments ? 'Checking…' : 'Confirm delete'
 
@@ -77,9 +76,9 @@ storiesOf('@sanity/desk-tool', module)
     const actions = [
       canContinue && {
         name: 'confirm',
-        title: hasReferringDocuments ? 'Try to unpublish anyway' : 'Unpublish now'
+        title: hasReferringDocuments ? 'Try to unpublish anyway' : 'Unpublish now',
       },
-      {name: 'cancel', title: 'Cancel', kind: 'secondary'}
+      {name: 'cancel', title: 'Cancel', kind: 'secondary'},
     ].filter(Boolean)
 
     const title = isCheckingReferringDocuments ? 'Checking…' : 'Confirm unpublish'
@@ -135,13 +134,13 @@ storiesOf('@sanity/desk-tool', module)
     const isNetworkError = boolean('isNetworkError')
     const message = text('message', 'An error occured')
     return (
-      <Dialog color="danger" title="Error" isOpen centered>
+      <Dialog color="danger" title="Error" isOpen centered size="medium">
         {!isNetworkError && <p>{message}</p>}
         {isNetworkError && (
-          <DialogContent size="medium">
+          <>
             <p>An error occured while attempting to reach the Sanity API.</p>
             <pre>Cors check goes here</pre>
-          </DialogContent>
+          </>
         )}
 
         <Button onClick={() => console.log('retry')}>Retry</Button>

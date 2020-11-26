@@ -8,12 +8,12 @@ import ActivateOnFocus from 'part:@sanity/components/utilities/activate-on-focus
 type Props = {
   fieldNames: string[]
   value: Record<string, any>
-  onChange: (arg0: PatchEvent) => void
+  onChange: (event: PatchEvent) => void
   readOnly?: boolean
 }
 
 export default class UnknownFields extends React.PureComponent<Props, {}> {
-  handleUnsetClick = fieldName => {
+  handleUnsetClick = (fieldName) => {
     this.props.onChange(PatchEvent.from(unset([fieldName])))
   }
 
@@ -32,7 +32,7 @@ export default class UnknownFields extends React.PureComponent<Props, {}> {
             These are not defined in the current schema as valid fields for this value. This could
             mean that the field has been removed, or that someone else has added it to their own
             local schema that is not yet deployed.
-            {fieldNames.map(fieldName => {
+            {fieldNames.map((fieldName) => {
               return (
                 <div key={fieldName}>
                   <h4>{fieldName}</h4>

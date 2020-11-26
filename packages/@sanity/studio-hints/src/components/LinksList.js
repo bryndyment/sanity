@@ -16,7 +16,7 @@ function CardLinks(props) {
       <ul
         className={`${styles.linksList} ${type === 'card' ? styles.cardList : styles.simpleList}`}
       >
-        {links.map(link => {
+        {links.map((link) => {
           return type === 'card' ? (
             <HintCard key={link._key} card={link} repoId={repoId} />
           ) : (
@@ -28,7 +28,7 @@ function CardLinks(props) {
                 rel="noopener noreferrer"
               >
                 {/* TODO: handle inserting icon */}
-                {link.title}
+                <span className={styles.linkTitleText}>{link.title}</span>
                 <span className={styles.externalIcon}>
                   <LaunchIcon />
                 </span>
@@ -46,12 +46,12 @@ CardLinks.propTypes = {
   title: PropTypes.string,
   repoId: PropTypes.string.isRequired,
   // eslint-disable-next-line react/forbid-prop-types
-  links: PropTypes.array.isRequired
+  links: PropTypes.array.isRequired,
 }
 
 CardLinks.defaultProps = {
   type: null,
-  title: ''
+  title: '',
 }
 
 export default CardLinks

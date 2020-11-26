@@ -1,46 +1,49 @@
 import React from 'react'
+import {uniqueId, capitalize} from 'lodash'
+import {isTitledListValue, TitledListValue} from '@sanity/types'
+import FormField from 'part:@sanity/components/formfields/default'
 import Select from 'part:@sanity/components/selects/default'
 import RadioSelect from 'part:@sanity/components/selects/radio'
-import PatchEvent, {set} from '../PatchEvent'
-import FormField from 'part:@sanity/components/formfields/default'
+import PatchEvent, {set, unset} from '../PatchEvent'
 import {Props} from './types'
-import {uniqueId, capitalize} from 'lodash'
 
 const EMPTY_ITEM = {title: '', value: undefined}
 
-function toSelectItem(option) {
-  if (typeof option === 'object') {
-    return option
-  }
-  return {title: capitalize(option), value: option}
+function toSelectItem(
+  option: TitledListValue<string | number> | string | number
+): TitledListValue<string | number> {
+  return isTitledListValue(option) ? option : {title: capitalize(`${option}`), value: option}
 }
 
-export default class SelectInput extends React.Component<Props> {
+export default class SelectInput extends React.Component<Props<string | number>> {
   _input: (RadioSelect | Select) | null
   name = uniqueId('RadioName')
   static defaultProps = {
-    value: ''
+    value: '',
   }
-  handleChange = (item: Record<string, any>) => {
+
+  handleChange = (item: string | number | TitledListValue<string | number>) => {
     const {onChange} = this.props
-    onChange(
-      PatchEvent.from(set(typeof item === 'string' || typeof item === 'number' ? item : item.value))
-    )
+    const newValue = typeof item === 'string' || typeof item === 'number' ? item : item.value
+    onChange(PatchEvent.from(typeof newValue === 'undefined' ? unset() : set(newValue)))
   }
+
   focus() {
     if (this._input) {
       this._input.focus()
     }
   }
+
   setInput = (input: (RadioSelect | Select) | null) => {
     this._input = input
   }
+
   render() {
     const {value, readOnly, markers, type, level, onFocus, presence} = this.props
-    const items = (type.options.list || []).map(toSelectItem)
-    const currentItem = items.find(item => item.value === value)
+    const items = ((type.options?.list || []) as unknown[]).map(toSelectItem)
+    const currentItem = items.find((item) => item.value === value)
     const isRadio = type.options && type.options.layout === 'radio'
-    const validation = markers.filter(marker => marker.type === 'validation')
+    const validation = markers.filter((marker) => marker.type === 'validation')
     return (
       <FormField
         labelFor={this.name}

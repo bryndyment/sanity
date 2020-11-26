@@ -5,14 +5,12 @@ import styles from './ErrorPane.css'
 
 export default function ErrorPane(props) {
   return (
-    <DefaultPane title="Error" isSelected={false} isCollapsed={false} isScrollable={false}>
-      <div className={styles.root}>
-        <div className={styles.message}>{props.children}</div>
-      </div>
+    <DefaultPane color="danger" title="Error" isSelected={false} isCollapsed={false}>
+      <div className={styles.root}>{props.children}</div>
     </DefaultPane>
   )
 }
 
 ErrorPane.propTypes = {
-  children: PropTypes.node.isRequired
+  children: PropTypes.node.isRequired,
 }

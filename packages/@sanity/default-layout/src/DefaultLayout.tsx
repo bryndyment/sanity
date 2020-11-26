@@ -6,10 +6,10 @@ import absolutes from 'all:part:@sanity/base/absolutes'
 import userStore from 'part:@sanity/base/user'
 import Sidecar from './addons/Sidecar'
 import RenderTool from './main/RenderTool'
-import ActionModal from './navbar/actionButton/ActionModal'
-import SideMenu from './navbar/drawer/SideMenu'
+import ActionModal from './actionModal/ActionModal'
 import NavbarContainer from './navbar/NavbarContainer'
 import {SchemaErrorReporter} from './schemaErrors/SchemaErrorReporter'
+import {SideMenu} from './sideMenu'
 import getNewDocumentModalActions from './util/getNewDocumentModalActions'
 import {Router, Tool, User} from './types'
 
@@ -39,7 +39,7 @@ class DefaultLayout extends React.PureComponent<Props, State> {
     menuIsOpen: false,
     showLoadingScreen: true,
     searchIsOpen: false,
-    loaded: false
+    loaded: false,
   }
 
   userSubscription: Subscription | null = null
@@ -48,8 +48,8 @@ class DefaultLayout extends React.PureComponent<Props, State> {
 
   // eslint-disable-next-line camelcase
   UNSAFE_componentWillMount() {
-    this.userSubscription = userStore.currentUser.subscribe(event =>
-      this.setState({user: event.user})
+    this.userSubscription = userStore.currentUser.subscribe((event) =>
+      this.setState({user: event.type === 'snapshot' ? event.user : null})
     )
   }
 
@@ -66,7 +66,7 @@ class DefaultLayout extends React.PureComponent<Props, State> {
     }
   }
 
-  handleClickCapture = event => {
+  handleClickCapture = (event) => {
     // Do not handle click if the event is not within DefaultLayout (portals)
     const rootTarget = event.target.closest(`.${styles.root}`)
     if (!rootTarget) return
@@ -84,7 +84,7 @@ class DefaultLayout extends React.PureComponent<Props, State> {
 
   handleAnimationEnd = () => {
     this.setState({
-      showLoadingScreen: false
+      showLoadingScreen: false,
     })
   }
 
@@ -96,26 +96,26 @@ class DefaultLayout extends React.PureComponent<Props, State> {
   }
 
   handleCreateButtonClick = () => {
-    this.setState(prevState => ({
-      createMenuIsOpen: !prevState.createMenuIsOpen
+    this.setState((prevState) => ({
+      createMenuIsOpen: !prevState.createMenuIsOpen,
     }))
   }
 
   handleActionModalClose = () => {
     this.setState({
-      createMenuIsOpen: false
+      createMenuIsOpen: false,
     })
   }
 
   handleToggleMenu = () => {
-    this.setState(prevState => ({
-      menuIsOpen: !prevState.menuIsOpen
+    this.setState((prevState) => ({
+      menuIsOpen: !prevState.menuIsOpen,
     }))
   }
 
   handleSwitchTool = () => {
     this.setState({
-      menuIsOpen: false
+      menuIsOpen: false,
     })
   }
 
@@ -127,7 +127,7 @@ class DefaultLayout extends React.PureComponent<Props, State> {
     this.setState({searchIsOpen: false})
   }
 
-  setLoadingScreenElement = element => {
+  setLoadingScreenElement = (element) => {
     this._loadingScreenElement = element
   }
 
@@ -154,14 +154,14 @@ class DefaultLayout extends React.PureComponent<Props, State> {
           </div>
         )}
 
-        <div className={styles.navBar}>
+        <div className={styles.navbar}>
           <NavbarContainer
             tools={tools}
+            createMenuIsOpen={createMenuIsOpen}
             onCreateButtonClick={this.handleCreateButtonClick}
             onToggleMenu={this.handleToggleMenu}
             onSwitchTool={this.handleSwitchTool}
             router={router}
-            user={this.state.user}
             searchIsOpen={searchIsOpen}
             /* eslint-disable-next-line react/jsx-handler-names */
             onUserLogout={userStore.actions.logout}
@@ -190,7 +190,10 @@ class DefaultLayout extends React.PureComponent<Props, State> {
               <RenderTool tool={router.state.tool} />
             </RouteScope>
           </div>
-          <Sidecar />
+
+          <div className={styles.sidecarContainer}>
+            <Sidecar />
+          </div>
         </div>
 
         {createMenuIsOpen && (
@@ -212,4 +215,4 @@ class DefaultLayout extends React.PureComponent<Props, State> {
   }
 }
 
-export default withRouterHOC(DefaultLayout) as React.ComponentType<OuterProps>
+export default (withRouterHOC(DefaultLayout as any) as any) as React.ComponentType<OuterProps>

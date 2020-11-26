@@ -32,6 +32,7 @@ function HintCard(props) {
           <span className={styles.cardTitle}>{card.titleOverride || card.hint.title}</span>
           <p className={styles.cardSummary}>{card.hint.description}</p>
         </div>
+
         <span className={styles.externalIcon}>
           <LaunchIcon />
         </span>
@@ -43,7 +44,7 @@ function HintCard(props) {
 HintCard.propTypes = {
   // eslint-disable-next-line react/forbid-prop-types
   card: PropTypes.object.isRequired,
-  repoId: PropTypes.string.isRequired
+  repoId: PropTypes.string.isRequired,
   // onCardClick: PropTypes.func.isRequired
 }
 

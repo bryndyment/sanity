@@ -1,10 +1,9 @@
-export {default as Avatar} from './Avatar'
-export {default as AvatarProvider} from './UserAvatar'
-export {default as PopoverList} from './PopoverList'
-export {default as StackCounter} from './StackCounter'
-export {GlobalPresence} from './GlobalPresence'
-export {PresenceOverlay} from './overlay/PresenceOverlay'
-export {FieldPresence} from './FieldPresence'
-export {PresenceRegion} from './overlay/PresenceOverlayRegion'
-export {Context} from './context'
-export {PresenceScope} from './PresenceScope'
+// Since we're not bundling this module in our internals,
+// this warning will only appear if third-party developers have imported it
+
+// eslint-disable-next-line no-console
+console.warn(
+  'Importing from `@sanity/components/lib/presence` is deprecated - please import from `@sanity/base/presence` instead'
+)
+
+export * from '@sanity/base/lib/presence'

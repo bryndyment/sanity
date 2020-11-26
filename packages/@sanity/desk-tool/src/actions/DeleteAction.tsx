@@ -1,10 +1,10 @@
-import React from 'react'
 import {useDocumentOperation} from '@sanity/react-hooks'
-import ConfirmDelete from '../components/ConfirmDelete'
 import TrashIcon from 'part:@sanity/base/trash-icon'
+import React, {useCallback} from 'react'
+import ConfirmDelete from '../components/ConfirmDelete'
 
 const DISABLED_REASON_TITLE = {
-  NOTHING_TO_DELETE: "This document doesn't yet exist or is already deleted"
+  NOTHING_TO_DELETE: "This document doesn't yet exist or is already deleted",
 }
 
 export function DeleteAction({id, type, draft, published, onComplete}) {
@@ -12,15 +12,29 @@ export function DeleteAction({id, type, draft, published, onComplete}) {
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [isConfirmDialogOpen, setConfirmDialogOpen] = React.useState(false)
 
+  const handleCancel = useCallback(() => {
+    setConfirmDialogOpen(false)
+    onComplete()
+  }, [onComplete])
+
+  const handleConfirm = useCallback(() => {
+    setIsDeleting(true)
+    setConfirmDialogOpen(false)
+    deleteOp.execute()
+    onComplete()
+  }, [deleteOp, onComplete])
+
+  const handle = useCallback(() => {
+    setConfirmDialogOpen(true)
+  }, [])
+
   return {
     icon: TrashIcon,
     disabled: Boolean(deleteOp.disabled),
     title: (deleteOp.disabled && DISABLED_REASON_TITLE[deleteOp.disabled]) || '',
     label: isDeleting ? 'Deleting…' : 'Delete',
     shortcut: 'Ctrl+Alt+D',
-    onHandle: () => {
-      setConfirmDialogOpen(true)
-    },
+    onHandle: handle,
     dialog: isConfirmDialogOpen && {
       type: 'legacy',
       onClose: onComplete,
@@ -29,18 +43,10 @@ export function DeleteAction({id, type, draft, published, onComplete}) {
         <ConfirmDelete
           draft={draft}
           published={published}
-          onCancel={() => {
-            setConfirmDialogOpen(false)
-            onComplete()
-          }}
-          onConfirm={async () => {
-            setIsDeleting(true)
-            setConfirmDialogOpen(false)
-            deleteOp.execute()
-            onComplete()
-          }}
+          onCancel={handleCancel}
+          onConfirm={handleConfirm}
         />
-      )
-    }
+      ),
+    },
   }
 }

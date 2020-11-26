@@ -12,14 +12,16 @@ import {
   share,
   take,
   tap,
-  withLatestFrom
+  withLatestFrom,
 } from 'rxjs/operators'
 import {
   CommitFunction,
   DocumentMutationEvent,
   DocumentRebaseEvent,
   MutationPayload,
-  SnapshotEvent
+  SnapshotEvent,
+  DocumentRemoteMutationEvent,
+  RemoteSnapshotEvent,
 } from './types'
 
 import {ListenerEvent, MutationEvent} from '../getPairListener'
@@ -50,8 +52,9 @@ const getUpdatedSnapshot = (bufferedDocument: BufferedDocument) => {
 
   return {
     ...LOCAL,
+    _type: (HEAD || LOCAL)._type,
     _rev: (HEAD || LOCAL)._rev,
-    _updatedAt: new Date().toISOString()
+    _updatedAt: new Date().toISOString(),
   }
 }
 
@@ -78,7 +81,10 @@ export const createObservableBufferedDocument = (
   // a stream of rebase events emitted from the mutator
   const rebase$ = new Subject<DocumentRebaseEvent>()
 
-  const createInitialBufferedDocument = initialSnapshot => {
+  // a stream of remote mutations with effetcs
+  const remoteMutations = new Subject<DocumentRemoteMutationEvent>()
+
+  const createInitialBufferedDocument = (initialSnapshot) => {
     const bufferedDocument = new BufferedDocument(initialSnapshot)
     bufferedDocument.onMutation = ({mutation, remote}) => {
       // this is called after either when:
@@ -88,7 +94,18 @@ export const createObservableBufferedDocument = (
         type: 'mutation',
         document: getUpdatedSnapshot(bufferedDocument),
         mutations: mutation.mutations,
-        origin: remote ? 'remote' : 'local'
+        origin: remote ? 'remote' : 'local',
+      })
+    }
+
+    bufferedDocument.onRemoteMutation = (mutation) => {
+      remoteMutations.next({
+        type: 'remoteMutation',
+        head: bufferedDocument.document.HEAD,
+        transactionId: mutation.transactionId,
+        timestamp: mutation.timestamp,
+        author: mutation.identity,
+        effects: mutation.effects,
       })
     }
 
@@ -96,7 +113,7 @@ export const createObservableBufferedDocument = (
       rebase$.next({type: 'rebase', document: edge, remoteMutations, localMutations})
     }
 
-    bufferedDocument.onConsistencyChanged = isConsistent => {
+    bufferedDocument.onConsistencyChanged = (isConsistent) => {
       consistency$.next(isConsistent)
     }
 
@@ -107,7 +124,7 @@ export const createObservableBufferedDocument = (
       mutation: Mutation
     }) => {
       const {resultRev, ...mutation} = opts.mutation.params
-      commitMutations(mutation).then(opts.success, error => {
+      commitMutations(mutation).then(opts.success, (error) => {
         const isBadRequest =
           error.name === 'ClientError' && error.statusCode >= 400 && error.statusCode <= 500
         if (isBadRequest) {
@@ -122,7 +139,7 @@ export const createObservableBufferedDocument = (
   }
 
   const currentBufferedDocument$ = listenerEvent$.pipe(
-    scan((bufferedDocument, listenerEvent): BufferedDocument => {
+    scan((bufferedDocument: BufferedDocument | null, listenerEvent) => {
       // consider renaming 'snapshot' to initial/welcome
       if (listenerEvent.type === 'snapshot') {
         if (bufferedDocument) {
@@ -175,7 +192,7 @@ export const createObservableBufferedDocument = (
     share()
   )
 
-  const emitAction = action => actions$.next(action)
+  const emitAction = (action) => actions$.next(action)
 
   const addMutations = (mutations: MutationPayload[]) => emitAction({type: 'mutation', mutations})
   const addMutation = (mutation: MutationPayload) => addMutations([mutation])
@@ -183,24 +200,33 @@ export const createObservableBufferedDocument = (
   const commit = () => {
     return currentBufferedDocument$.pipe(
       take(1),
-      mergeMap(bufferedDocument => bufferedDocument.commit()),
+      mergeMap((bufferedDocument) => bufferedDocument.commit()),
       mergeMapTo(EMPTY)
     )
   }
 
   // A stream of this document's snapshot
   const snapshot$ = merge(
-    currentBufferedDocument$.pipe(map(bufferedDocument => bufferedDocument.LOCAL)),
+    currentBufferedDocument$.pipe(map((bufferedDocument) => bufferedDocument.LOCAL)),
     mutations$.pipe(map(getDocument)),
     rebase$.pipe(map(getDocument)),
     snapshotAfterSync$
   ).pipe(map(toSnapshotEvent), publishReplay(1), refCount())
 
+  const remoteSnapshot$: Observable<RemoteSnapshotEvent> = merge(
+    currentBufferedDocument$.pipe(
+      map((bufferedDocument) => bufferedDocument.document.HEAD),
+      map(toSnapshotEvent)
+    ),
+    remoteMutations
+  ).pipe(publishReplay(1), refCount())
+
   return {
     updates$: merge(snapshot$, actionHandler$, mutations$, rebase$),
     consistency$: consistency$.pipe(distinctUntilChanged(), publishReplay(1), refCount()),
+    remoteSnapshot$,
     addMutation,
     addMutations,
-    commit
+    commit,
   }
 }

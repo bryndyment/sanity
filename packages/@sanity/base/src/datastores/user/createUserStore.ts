@@ -1,46 +1,49 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import {Observable} from 'rxjs'
-import createActions from '../utils/createActions'
+import {Observable, of, from} from 'rxjs'
+import raf from 'raf'
+import DataLoader from 'dataloader'
 import pubsub from 'nano-pubsub'
 import authenticationFetcher from 'part:@sanity/base/authentication-fetcher'
 import client from 'part:@sanity/base/client'
+import {User, CurrentUser, CurrentUserEvent} from './types'
 
-const userChannel = pubsub()
-const errorChannel = pubsub()
+const userCache: Record<string, User | null> = {}
+
+const userChannel = pubsub<CurrentUser | null>()
+const errorChannel = pubsub<Error | null>()
 
 let _initialFetched = false
-let _currentUser = null
-let _currentError = null
+let _currentUser: CurrentUser | null = null
+let _currentError: Error | null = null
 
-userChannel.subscribe(val => {
+userChannel.subscribe((val: CurrentUser | null) => {
   _currentUser = val
+
+  if (val) {
+    const normalized = normalizeOwnUser(val)
+    userCache.me = normalized
+    userCache[val.id] = normalized
+  }
 })
 
-errorChannel.subscribe(val => {
+errorChannel.subscribe((val) => {
   _currentError = val
 })
 
-export interface User {
-  id: string
-  displayName?: string
-  imageUrl?: string
-}
-
-function fetchInitial() {
+function fetchInitial(): Promise<CurrentUser> {
   return authenticationFetcher.getCurrentUser().then(
-    user => userChannel.publish(user),
-    err => errorChannel.publish(err)
+    (user) => userChannel.publish(user),
+    (err) => errorChannel.publish(err)
   )
 }
 
-function logout() {
+function logout(): Promise<null> {
   return authenticationFetcher.logout().then(
     () => userChannel.publish(null),
-    err => errorChannel.publish(err)
+    (err) => errorChannel.publish(err)
   )
 }
 
-const currentUser = new Observable(observer => {
+const currentUser = new Observable<CurrentUserEvent>((observer) => {
   if (_initialFetched) {
     const emitter = _currentError ? emitError : emitSnapshot
     emitter(_currentError || _currentUser)
@@ -49,8 +52,8 @@ const currentUser = new Observable(observer => {
     fetchInitial()
   }
 
-  const unsubUser = userChannel.subscribe(nextUser => emitSnapshot(nextUser))
-  const unsubError = errorChannel.subscribe(err => emitError(err))
+  const unsubUser = userChannel.subscribe((nextUser) => emitSnapshot(nextUser))
+  const unsubError = errorChannel.subscribe((err) => emitError(err))
   const unsubscribe = () => {
     unsubUser()
     unsubError()
@@ -67,33 +70,82 @@ const currentUser = new Observable(observer => {
   }
 })
 
-const userCache = {}
+const userLoader = new DataLoader(loadUsers, {
+  batchScheduleFn: (cb) => raf(cb),
+})
 
-const getUser = (id: string): Promise<User> => {
-  if (!userCache[id]) {
-    userCache[id] = client
+async function loadUsers(userIds: readonly string[]): Promise<(User | null)[]> {
+  const missingIds = userIds.filter((userId) => !(userId in userCache))
+  let users: User[] = []
+  if (missingIds.length > 0) {
+    users = await client
       .request({
-        uri: `/users/${id}`,
-        withCredentials: true
+        uri: `/users/${missingIds.join(',')}`,
+        withCredentials: true,
       })
-      .then(user => {
-        return user && user.id ? user : null
-      })
+      .then(arrayify)
+
+    users.forEach((user) => {
+      userCache[user.id] = user
+    })
   }
 
-  return userCache[id]
+  return userIds.map((userId) => {
+    // Try cache first
+    if (userCache[userId]) {
+      return userCache[userId]
+    }
+
+    // Look up from returned users
+    return users.find((user) => user.id === userId) || null
+  })
 }
 
-// TODO Optimize for getting all users in one query
-const getUsers = (ids: string[]): Promise<User[]> => {
-  return Promise.all(ids.map(id => getUser(id)))
+function getUser(userId: string): Promise<User | null> {
+  return userLoader.load(userId)
 }
 
-export default function createUserStore(options = {}) {
+async function getUsers(ids: string[]): Promise<User[]> {
+  const users = await userLoader.loadMany(ids)
+  return users.filter(isUser)
+}
+
+function arrayify(users: User | User[]): User[] {
+  return Array.isArray(users) ? users : [users]
+}
+
+function isUser(thing: unknown): thing is User {
+  return thing && thing !== null && typeof (thing as User).id === 'string'
+}
+
+function normalizeOwnUser(user: CurrentUser): User {
   return {
-    actions: createActions({logout, retry: fetchInitial}),
+    id: user.id,
+    displayName: user.name,
+    imageUrl: user.profileImage,
+  }
+}
+
+const observableApi = {
+  currentUser,
+
+  getUser: (userId: string): Observable<User | null> =>
+    typeof userCache[userId] === 'undefined' ? from(getUser(userId)) : of(userCache[userId]),
+
+  getUsers: (userIds: string[]): Observable<User[]> => {
+    const missingIds = userIds.filter((userId) => !(userId in userCache))
+    return missingIds.length === 0
+      ? of(userIds.map((userId) => userCache[userId]).filter(isUser))
+      : from(getUsers(userIds))
+  },
+}
+
+export default function createUserStore() {
+  return {
+    actions: {logout, retry: fetchInitial},
     currentUser,
     getUser,
-    getUsers
+    getUsers,
+    observable: observableApi,
   }
 }

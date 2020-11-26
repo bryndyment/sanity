@@ -1,29 +1,36 @@
 import React from 'react'
+import {SchemaType, isTitledListValue, TitledListValue, Path} from '@sanity/types'
 import Checkbox from 'part:@sanity/components/toggles/checkbox'
 import Preview from '../../Preview'
-import {isLegacyOptionsItem, resolveValueWithLegacyOptionsSupport} from './legacyOptionsSupport'
-import {Type} from '../../typedefs'
+import {resolveValueWithLegacyOptionsSupport} from './legacyOptionsSupport'
+
 type Props = {
-  type: Type
-  value: any
+  type: SchemaType
+  value: TitledListValue | unknown
   checked: boolean
-  onChange: (arg0: boolean, arg1: any) => void
+  onChange: (checked: boolean, item: any) => void
+  onFocus: (path: Path) => void
+  onBlur: () => void
   readOnly: boolean | null
 }
-export default class Item extends React.PureComponent<Props, {}> {
+
+export default class Item extends React.PureComponent<Props> {
   handleChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
     const {onChange, value} = this.props
     onChange(event.currentTarget.checked, value)
   }
+
   render() {
-    const {value, checked, type, readOnly} = this.props
+    const {value, checked, type, onFocus, onBlur, readOnly} = this.props
     return (
       <Checkbox
         onChange={this.handleChange}
+        onFocus={onFocus}
+        onBlur={onBlur}
         checked={checked}
         readOnly={readOnly || type.readOnly}
         label={
-          isLegacyOptionsItem(value) ? (
+          isTitledListValue(value) ? (
             value.title
           ) : (
             <Preview

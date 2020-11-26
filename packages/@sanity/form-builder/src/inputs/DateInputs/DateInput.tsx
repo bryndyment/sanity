@@ -1,8 +1,9 @@
 import moment, {Moment} from 'moment'
 import React from 'react'
+import {Marker} from '@sanity/types'
 import PatchEvent, {set, unset} from '../../PatchEvent'
-import {Marker} from '../../typedefs'
 import BaseDateTimeInput from './BaseDateTimeInput'
+
 type ParsedOptions = {
   dateFormat: string
   calendarTodayLabel: string
@@ -17,7 +18,7 @@ const VALUE_FORMAT = 'YYYY-MM-DD'
 const DEFAULT_DATE_FORMAT = VALUE_FORMAT
 type Props = {
   value: string
-  markers: Array<Marker>
+  markers: Marker[]
   type: {
     name: string
     title: string
@@ -26,7 +27,7 @@ type Props = {
     placeholder?: string
   }
   readOnly: boolean | null
-  onChange: (arg0: PatchEvent) => void
+  onChange: (event: PatchEvent) => void
   level: number
   onFocus: () => void
   presence: any
@@ -34,7 +35,7 @@ type Props = {
 function parseOptions(options: SchemaOptions = {}): ParsedOptions {
   return {
     dateFormat: options.dateFormat || DEFAULT_DATE_FORMAT,
-    calendarTodayLabel: options.calendarTodayLabel || 'Today'
+    calendarTodayLabel: options.calendarTodayLabel || 'Today',
   }
 }
 export default class DateInput extends React.Component<Props> {

@@ -1,14 +1,15 @@
 // Default wiring for FormBuilderContext when used as a sanity part
 import React from 'react'
-import FormBuilderContext from '../FormBuilderContext'
+import {Schema} from '@sanity/types'
 import SanityPreview from 'part:@sanity/base/preview'
+import FormBuilderContext from '../FormBuilderContext'
 import inputResolver from './inputResolver/inputResolver'
 import * as gradientPatchAdapter from './utils/gradientPatchAdapter'
 
 const previewResolver = () => SanityPreview
 type Props = {
   value: any | null
-  schema: Record<string, any>
+  schema: Schema
   patchChannel: any
   children: React.ReactElement
 }
@@ -27,28 +28,28 @@ export default function SanityFormBuilderContext(props: Props) {
 }
 
 function prepareMutationEvent(event) {
-  const patches = event.mutations.map(mut => mut.patch).filter(Boolean)
+  const patches = event.mutations.map((mut) => mut.patch).filter(Boolean)
   return {
     snapshot: event.document,
-    patches: gradientPatchAdapter.toFormBuilder(event.origin, patches)
+    patches: gradientPatchAdapter.toFormBuilder(event.origin, patches),
   }
 }
 
 function prepareRebaseEvent(event) {
-  const remotePatches = event.remoteMutations.map(mut => mut.patch).filter(Boolean)
-  const localPatches = event.localMutations.map(mut => mut.patch).filter(Boolean)
+  const remotePatches = event.remoteMutations.map((mut) => mut.patch).filter(Boolean)
+  const localPatches = event.localMutations.map((mut) => mut.patch).filter(Boolean)
   return {
     snapshot: event.document,
     patches: gradientPatchAdapter
       .toFormBuilder('remote', remotePatches)
-      .concat(gradientPatchAdapter.toFormBuilder('local', localPatches))
+      .concat(gradientPatchAdapter.toFormBuilder('local', localPatches)),
   }
 }
 
 SanityFormBuilderContext.createPatchChannel = () => {
   const patchChannel = FormBuilderContext.createPatchChannel()
   return {
-    receiveEvent: event => {
+    receiveEvent: (event) => {
       if (event.type !== 'mutation' && event.type !== 'rebase') {
         return
       }
@@ -56,6 +57,6 @@ SanityFormBuilderContext.createPatchChannel = () => {
         event.type === 'mutation' ? prepareMutationEvent(event) : prepareRebaseEvent(event)
       )
     },
-    onPatch: patchChannel.onPatch
+    onPatch: patchChannel.onPatch,
   }
 }

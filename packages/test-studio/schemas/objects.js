@@ -9,14 +9,14 @@ export const myObject = {
     {
       name: 'first',
       type: 'string',
-      title: 'First'
+      title: 'First',
     },
     {
       name: 'second',
       type: 'string',
-      title: 'Second'
-    }
-  ]
+      title: 'Second',
+    },
+  ],
 }
 
 export default {
@@ -25,8 +25,8 @@ export default {
   title: 'Objects test',
   preview: {
     select: {
-      title: 'myObject.first'
-    }
+      title: 'myObject.first',
+    },
   },
   fieldsets: [{name: 'recursive', title: 'Recursive', options: {collapsable: true}}],
   fields: [
@@ -34,7 +34,7 @@ export default {
       name: 'myObject',
       type: 'myObject',
       title: 'MyObject',
-      description: 'The first field here should be the title'
+      description: 'The first field here should be the title',
     },
     {
       name: 'fieldWithObjectType',
@@ -48,15 +48,15 @@ export default {
           name: 'field2',
           type: 'myObject',
           title: 'A field of myObject',
-          description: 'This is another field of "myObject"'
-        }
-      ]
+          description: 'This is another field of "myObject"',
+        },
+      ],
     },
     {
       name: 'recursive',
       title: 'This field is of type objectsTest',
       type: 'objectsTest',
-      fieldset: 'recursive'
+      fieldset: 'recursive',
     },
     {
       name: 'collapsibleObject',
@@ -67,8 +67,23 @@ export default {
         'This is a field of (anonymous, inline) object type. Values here should never get a `_type` property',
       fields: [
         {name: 'field1', type: 'string', description: 'This is a string field'},
-        {name: 'field2', type: 'string', description: 'This is a collapsed field'}
-      ]
+        {name: 'field2', type: 'string', description: 'This is a collapsed field'},
+        {
+          name: 'field3',
+          type: 'object',
+          options: {collapsible: true, collapsed: true},
+          fields: [
+            {name: 'nested1', title: 'nested1', type: 'string'},
+            {
+              name: 'nested2',
+              title: 'nested2',
+              type: 'object',
+              fields: [{name: 'ge', title: 'hello', type: 'string'}],
+              options: {collapsible: true, collapsed: true},
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'events',
@@ -83,9 +98,9 @@ export default {
               return {
                 title: where,
                 subtitle: (what || []).join(', '),
-                media: () => (where || '').slice(0, 1)
+                media: () => (where || '').slice(0, 1),
               }
-            }
+            },
           },
           fields: [
             {
@@ -93,7 +108,7 @@ export default {
               title: 'Where',
               description: 'Victoriagade? Baghaven? Koelschip?',
               type: 'string',
-              validation: Rule => Rule.required()
+              validation: (Rule) => Rule.required(),
             },
             {
               name: 'what',
@@ -101,11 +116,11 @@ export default {
               description: 'Party? Bottle release? Tap takeover?',
               type: 'array',
               of: [{type: 'string'}],
-              validation: Rule => Rule.min(1)
-            }
-          ]
-        }
-      ]
-    }
-  ]
+              validation: (Rule) => Rule.min(1),
+            },
+          ],
+        },
+      ],
+    },
+  ],
 }

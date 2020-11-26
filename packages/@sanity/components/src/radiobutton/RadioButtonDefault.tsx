@@ -1,16 +1,16 @@
-import React from 'react'
-import styles from './RadioButtonDefault.css'
-import sharedStyles from '../toggles/shared.css'
+import React, {useCallback} from 'react'
 import {useId} from '@reach/auto-id'
+import sharedStyles from '../toggles/shared.css'
+import styles from './RadioButtonDefault.css'
 
 type Props = {
   label: string
-  item: object
-  onChange?: (any) => void
-  onFocus: () => void
+  item: Record<string, unknown>
+  onChange?: (item: Record<string, unknown>) => void
+  onFocus?: (evt: React.FocusEvent<HTMLInputElement>) => void
   checked: boolean
-  disabled: boolean
-  name: string
+  disabled?: boolean
+  name?: string
 }
 
 export default function RadioButton({
@@ -20,12 +20,13 @@ export default function RadioButton({
   label,
   name,
   onChange,
-  onFocus
+  onFocus,
 }: Props) {
   const elementId = useId()
-  const handleChange = () => {
-    onChange(item)
-  }
+
+  const handleChange = useCallback(() => {
+    if (onChange) onChange(item)
+  }, [item, onChange])
 
   return (
     <div className={styles.root}>
@@ -33,6 +34,7 @@ export default function RadioButton({
         id={`radio-${elementId}-input`}
         aria-describedby={`radio-${elementId}-description`}
         className={styles.input}
+        name={name}
         type="checkbox"
         disabled={disabled}
         checked={checked}

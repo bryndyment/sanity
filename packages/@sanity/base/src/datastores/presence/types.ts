@@ -1,7 +1,7 @@
-import {User} from '../user/createUserStore'
+import {Path} from '@sanity/types'
+import {User} from '../user'
 
 export type Status = 'online' | 'editing' | 'inactive'
-export type PathElement = string | number | {_key: string}
 
 // Low level data/transport format
 export interface Session {
@@ -16,24 +16,27 @@ export interface PresenceLocation {
   type: 'document'
   documentId: string
   lastActiveAt: LastActiveAt
-  path: PathElement[]
+  path: Path
 }
 
+export interface UserSessionPair {
+  user: User
+  session: Session
+}
 type LastActiveAt = string // iso date
 
 // These are the data prepared and made ready for different types of UI components to use
 // Presence data prepared for a single document
-interface DocumentPresence {
-  userId: string
-  sessionId: string
-  path: PathElement[]
+export interface DocumentPresence {
+  user: User
+  path: Path
   lastActiveAt: LastActiveAt
 }
 
 export {User}
 
 export type GlobalPresence = {
-  userId: string
+  user: User
   status: Status
   lastActiveAt: LastActiveAt
   locations: PresenceLocation[]

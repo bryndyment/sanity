@@ -3,12 +3,11 @@ import React, {FunctionComponent, SyntheticEvent} from 'react'
 import {isEqual} from 'lodash'
 import classNames from 'classnames'
 import {PortableTextChild, Type, RenderAttributes} from '@sanity/portable-text-editor'
+import {Path, Marker, isValidationErrorMarker} from '@sanity/types'
 
 import {FOCUS_TERMINATOR} from '@sanity/util/paths'
 import Preview from '../../../Preview'
 import {PatchEvent} from '../../../PatchEvent'
-import {Marker} from '../../../typedefs'
-import {Path} from '../../../typedefs/path'
 
 import styles from './InlineObject.css'
 
@@ -18,7 +17,7 @@ type Props = {
   attributes: RenderAttributes
   readOnly: boolean
   markers: Marker[]
-  onFocus: (arg0: Path) => void
+  onFocus: (path: Path) => void
   onChange: (patchEvent: PatchEvent, path: Path) => void
 }
 
@@ -28,15 +27,14 @@ export const InlineObject: FunctionComponent<Props> = ({
   markers,
   attributes: {focused, selected, path},
   onFocus,
-  readOnly
+  readOnly,
 }) => {
-  const validation = markers.filter(marker => marker.type === 'validation')
-  const errors = validation.filter(marker => marker.level === 'error')
+  const errors = markers.filter(isValidationErrorMarker)
   const classnames = classNames([
     styles.root,
     focused && styles.focused,
     selected && styles.selected,
-    errors.length > 0 && styles.hasErrors
+    errors.length > 0 && styles.hasErrors,
   ])
 
   const handleOpen = (event: SyntheticEvent<HTMLSpanElement>): void => {

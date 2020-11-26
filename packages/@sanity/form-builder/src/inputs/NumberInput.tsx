@@ -1,11 +1,13 @@
 import React from 'react'
+import {uniqueId} from 'lodash'
+import {NumberSchemaType} from '@sanity/types'
 import TextInput from 'part:@sanity/components/textinputs/default'
 import FormField from 'part:@sanity/components/formfields/default'
 import {getValidationRule} from '../utils/getValidationRule'
 import PatchEvent, {set, unset} from '../PatchEvent'
 import {Props} from './types'
-import {uniqueId} from 'lodash'
-export default class NumberInput extends React.Component<Props, {}> {
+
+export default class NumberInput extends React.Component<Props<number, NumberSchemaType>> {
   _input: TextInput | null
   _inputId = uniqueId('NumberInput')
   handleChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
@@ -21,9 +23,9 @@ export default class NumberInput extends React.Component<Props, {}> {
     this._input = input
   }
   render() {
-    const {value = '', readOnly, markers, type, level, onFocus} = this.props
-    const validation = markers.filter(marker => marker.type === 'validation')
-    const errors = validation.filter(marker => marker.level === 'error')
+    const {value = '', readOnly, markers, type, level, onFocus, presence} = this.props
+    const validation = markers.filter((marker) => marker.type === 'validation')
+    const errors = validation.filter((marker) => marker.level === 'error')
     // Show numpad on mobile if only positive numbers is preferred
     const minRule = getValidationRule(type, 'min')
     const onlyPositiveNumber = minRule && minRule.constraint >= 0
@@ -34,6 +36,7 @@ export default class NumberInput extends React.Component<Props, {}> {
         label={type.title}
         description={type.description}
         labelFor={this._inputId}
+        presence={presence}
       >
         <TextInput
           inputId={this._inputId}

@@ -1,6 +1,3 @@
-import React, {useMemo, useCallback} from 'react'
-import {Tooltip} from 'react-tippy'
-import {FOCUS_TERMINATOR} from '@sanity/util/paths'
 import {
   HotkeyOptions,
   PortableTextBlock,
@@ -13,13 +10,15 @@ import {
   EditorSelection,
   OnPasteFn,
   OnCopyFn,
-  PortableTextEditor
+  PortableTextEditor,
+  usePortableTextEditor,
 } from '@sanity/portable-text-editor'
-import ErrorCircleIcon from 'part:@sanity/base/error-icon'
-import Button from 'part:@sanity/components/buttons/default'
-import ValidationList from 'part:@sanity/components/validation/list'
+import {Marker} from '@sanity/types'
+import {FOCUS_TERMINATOR} from '@sanity/util/paths'
+import {useLayer} from 'part:@sanity/components/layer'
+import {ScrollContainer} from 'part:@sanity/components/scroll'
+import React, {useMemo, useCallback, useEffect, useState} from 'react'
 import PatchEvent from '../../PatchEvent'
-import {Marker} from '../../typedefs'
 import styles from './PortableTextInput.css'
 import Toolbar from './Toolbar/Toolbar'
 import {ExpandCollapseButton} from './expandCollapseButton'
@@ -34,12 +33,10 @@ type Props = {
   hotkeys: HotkeyOptions
   onBlur: () => void
   onCopy?: OnCopyFn
-  onCloseValidationResults: () => void
   onFocus: (Path) => void
   onFormBuilderChange: (change: PatchEvent) => void
   onPaste?: OnPasteFn
   onToggleFullscreen: () => void
-  onToggleValidationResults: () => void
   portableTextFeatures: PortableTextFeatures
   readOnly: boolean | null
   renderAnnotation: RenderAnnotationFunction
@@ -47,7 +44,7 @@ type Props = {
   renderBlockActions?: RenderBlockActions
   renderChild: RenderChildFunction
   renderCustomMarkers?: RenderCustomMarkers
-  showValidationTooltip: boolean
+  setScrollContainerElement: (el: HTMLElement | null) => void
   value: PortableTextBlock[] | undefined
 }
 
@@ -60,23 +57,25 @@ function PortableTextSanityEditor(props: Props) {
     initialSelection,
     isFullscreen,
     markers,
-    onCloseValidationResults,
     onCopy,
     onFocus,
     onFormBuilderChange,
     onPaste,
     onToggleFullscreen,
-    onToggleValidationResults,
-    portableTextFeatures,
     readOnly,
     renderAnnotation,
     renderBlock,
     renderBlockActions,
     renderChild,
     renderCustomMarkers,
-    showValidationTooltip,
-    value
+    setScrollContainerElement,
+    value,
   } = props
+
+  const editor = usePortableTextEditor()
+  const ptFeatures = useMemo(() => PortableTextEditor.getPortableTextFeatures(editor), [])
+  const layer = useLayer()
+  const isTopLayer = layer.depth === layer.size
 
   const handleOpenObjectHotkey = (
     event: React.BaseSyntheticEvent,
@@ -95,7 +94,7 @@ function PortableTextSanityEditor(props: Props) {
           ...focus.path.slice(0, 1),
           'markDefs',
           {_key: activeAnnotations[0]._key},
-          FOCUS_TERMINATOR
+          FOCUS_TERMINATOR,
         ])
         return
       }
@@ -112,52 +111,51 @@ function PortableTextSanityEditor(props: Props) {
     custom: {
       'mod+enter': props.onToggleFullscreen,
       // 'mod+o': handleOpenObjectHotkey, // TODO: disabled for now, enable when we agree on the hotkey
-      ...(props.hotkeys || {}).custom
-    }
+      ...(props.hotkeys || {}).custom,
+    },
   }
+  const defaultHotkeys = {marks: {}}
+  ptFeatures.decorators.forEach((dec) => {
+    switch (dec.value) {
+      case 'strong':
+        defaultHotkeys.marks['mod+b'] = dec.value
+        break
+      case 'em':
+        defaultHotkeys.marks['mod+i'] = dec.value
+        break
+      case 'underline':
+        defaultHotkeys.marks['mod+u'] = dec.value
+        break
+      case 'code':
+        defaultHotkeys.marks["mod+'"] = dec.value
+        break
+      default:
+      // Nothing
+    }
+  })
   const marksFromProps: HotkeyOptions = {
     marks: {
-      'mod+b': 'strong',
-      'mod+i': 'em',
-      'mod+u': 'underline',
-      "mod+'": 'code',
-      ...(props.hotkeys || {}).marks
-    }
+      ...defaultHotkeys.marks,
+      ...(props.hotkeys || {}).marks,
+    },
   }
   const hotkeys: HotkeyOptions = {
     ...marksFromProps,
-    ...customFromProps
+    ...customFromProps,
   }
 
   const hasMarkers = markers.length > 0
   const scClassNames = [
     styles.scrollContainer,
-    ...(renderBlockActions || hasMarkers ? [styles.hasBlockExtras] : [])
+    ...(renderBlockActions || hasMarkers ? [styles.hasBlockExtras] : [styles.hasNoBlockExtras]),
   ].join(' ')
   const editorWrapperClassNames = [styles.editorWrapper].join(' ')
   const editorClassNames = [
     styles.editor,
-    ...(renderBlockActions || hasMarkers ? [styles.hasBlockExtras] : [])
+    ...(renderBlockActions || hasMarkers ? [styles.hasBlockExtras] : [styles.hasNoBlockExtras]),
   ].join(' ')
 
-  const validation = markers.filter(marker => marker.type === 'validation')
-  const errors = validation.filter(marker => marker.level === 'error')
-  const warnings = validation.filter(marker => marker.level === 'warning')
-
-  const validationList = useMemo(
-    () => (
-      <ValidationList
-        markers={validation}
-        showLink
-        isOpen={showValidationTooltip}
-        documentType={portableTextFeatures.types.portableText}
-        onClose={onCloseValidationResults}
-        onFocus={onFocus}
-      />
-    ),
-    [validation, showValidationTooltip]
-  )
-  const renderBlockExtras = useCallback(
+  const blockExtras = useCallback(
     () => (
       <BlockExtrasOverlay
         isFullscreen={isFullscreen}
@@ -169,9 +167,34 @@ function PortableTextSanityEditor(props: Props) {
         value={value}
       />
     ),
-    [markers, isFullscreen]
+    [isFullscreen, value]
   )
-  const editor = useMemo(
+
+  // Needed for rendering the overlay in the correct place when toggling fullscreen.
+  const [forceUpdate, setForceUpdate] = useState(0)
+  useEffect(() => {
+    setForceUpdate(forceUpdate + 1)
+  }, [])
+
+  useEffect(() => {
+    if (!isTopLayer || !isFullscreen) return undefined
+
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        onToggleFullscreen()
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown)
+    }
+  }, [isFullscreen, isTopLayer, onToggleFullscreen])
+
+  const _editor = useMemo(
     () => (
       <div className={styles.editorBox}>
         <div className={styles.header}>
@@ -184,31 +207,6 @@ function PortableTextSanityEditor(props: Props) {
               readOnly={readOnly}
             />
           </div>
-          {isFullscreen && (errors.length > 0 || warnings.length > 0) && (
-            <div className={styles.validationContainer}>
-              <Tooltip
-                arrow
-                duration={100}
-                html={validationList}
-                interactive
-                onRequestClose={onCloseValidationResults}
-                open={showValidationTooltip}
-                position="bottom"
-                style={{padding: 0}}
-                theme="light"
-                trigger="click"
-              >
-                <Button
-                  color="danger"
-                  icon={ErrorCircleIcon}
-                  kind="simple"
-                  onClick={onToggleValidationResults}
-                  padding="small"
-                />
-              </Tooltip>
-            </div>
-          )}
-
           <div className={styles.fullscreenButtonContainer}>
             <ExpandCollapseButton
               isFullscreen={isFullscreen}
@@ -216,8 +214,10 @@ function PortableTextSanityEditor(props: Props) {
             />
           </div>
         </div>
-        <div className={scClassNames}>
+
+        <ScrollContainer className={scClassNames} ref={setScrollContainerElement}>
           <div className={editorWrapperClassNames}>
+            <div className={styles.blockExtras}>{blockExtras()}</div>
             <div className={editorClassNames}>
               <PortableTextEditable
                 hotkeys={hotkeys}
@@ -232,14 +232,13 @@ function PortableTextSanityEditor(props: Props) {
                 spellCheck
               />
             </div>
-            <div className={styles.blockExtras}>{renderBlockExtras()}</div>
           </div>
-        </div>
+        </ScrollContainer>
       </div>
     ),
-    [initialSelection, isFullscreen, value, markers, readOnly, errors]
+    [initialSelection, isFullscreen, value, readOnly, forceUpdate]
   )
-  return editor
+  return _editor
 }
 
 export default PortableTextSanityEditor

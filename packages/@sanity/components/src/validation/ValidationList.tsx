@@ -1,107 +1,94 @@
-import React from 'react'
+import React, {useCallback} from 'react'
+import {
+  ObjectSchemaType,
+  Path,
+  Marker,
+  isValidationErrorMarker,
+  isValidationWarningMarker,
+} from '@sanity/types'
 import ValidationListItem from './ValidationListItem'
-import {Marker} from '../typedefs'
 
 import styles from './ValidationList.css'
 
-type Props = {
-  kind?: string
-  onFocus?: (path: any) => void
-  onClose?: () => void
-  showLink?: boolean
-  truncate?: boolean
-  documentType?: {
-    fields: {
-      name: string
-      type: any
-    }[]
-  }
+interface ValidationListProps {
+  documentType?: ObjectSchemaType
+  kind?: 'simple'
   markers: Marker[]
+  onFocus?: (path: Path) => void
+  onClose?: () => void
+  // showLink?: boolean
+  truncate?: boolean
 }
 
-export default class ValidationList extends React.PureComponent<Props> {
-  static defaultProps = {
-    markers: [],
-    documentType: null,
-    onClose: () => undefined,
-    showLink: false,
-    onFocus: () => undefined
-  }
-  scrollTimeout: any
+function ValidationList(props: ValidationListProps) {
+  const {
+    documentType,
+    kind,
+    markers,
+    onFocus,
+    onClose,
+    truncate,
+    // showLink,
+  } = props
 
-  componentWillUnmount() {
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout)
-    }
-  }
+  const errors = markers.filter(isValidationErrorMarker)
+  const warnings = markers.filter(isValidationWarningMarker)
 
-  handleClick = (event, path) => {
-    const {onFocus, onClose} = this.props
-    const pathString = path[0]
-    const element = document.querySelector(`[data-focus-path="${pathString}"]`)
+  const handleClick = useCallback(
+    (path: Path = []) => {
+      if (onFocus) onFocus(path)
+      if (onClose) onClose()
+    },
+    [onFocus, onClose]
+  )
 
-    if (element) {
-      element.scrollIntoView({behavior: 'smooth', inline: 'center'})
-      if (this.scrollTimeout) {
-        clearTimeout(this.scrollTimeout)
-      }
-      this.scrollTimeout = setTimeout(() => {
-        onFocus(path)
-        onClose()
-      }, 300)
-    } else {
-      onFocus(path)
-      onClose()
-    }
+  const resolvePathTitle = (path: Path) => {
+    const fields = documentType && documentType.fields
+    const field = fields && fields.find((curr) => curr.name === path[0])
+
+    return (field && field.type.title) || ''
   }
 
-  resolvePathTitle(path) {
-    const type = this.props.documentType
-    const fields = type && type.fields
-    const field = fields && fields.find(curr => curr.name === path[0])
-    return field ? field.type.title : ''
+  const hasErrors = errors.length > 0
+  const hasWarnings = warnings.length > 0
+
+  if (!hasErrors && !hasWarnings) {
+    return null
   }
 
-  render() {
-    const {kind, markers, showLink, truncate} = this.props
-    const validation = markers.filter(marker => marker.type === 'validation')
-    const errors = validation.filter(marker => marker.level === 'error')
-    const warnings = validation.filter(marker => marker.level === 'warning')
+  return (
+    <ul className={styles.root} data-kind={kind}>
+      {hasErrors &&
+        errors.map((error, i) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <li className={styles.item} key={i}>
+            <ValidationListItem
+              kind={kind}
+              truncate={truncate}
+              path={resolvePathTitle(error.path)}
+              marker={error}
+              onClick={handleClick}
+              // showLink={showLink}
+            />
+          </li>
+        ))}
 
-    if (errors.length === 0 && warnings.length === 0) {
-      return <div />
-    }
-
-    return (
-      <ul className={styles.root} data-kind={kind}>
-        {errors.length > 0 &&
-          errors.map((error, i) => (
-            <li className={styles.item} key={i}>
-              <ValidationListItem
-                kind={kind}
-                truncate={truncate}
-                path={this.resolvePathTitle(error.path)}
-                marker={error}
-                onClick={this.handleClick}
-                showLink={showLink}
-              />
-            </li>
-          ))}
-
-        {warnings.length > 0 &&
-          warnings.map((warning, i) => (
-            <li className={styles.item} key={i}>
-              <ValidationListItem
-                kind={kind}
-                truncate={truncate}
-                path={this.resolvePathTitle(warning.path)}
-                marker={warning}
-                onClick={this.handleClick}
-                showLink={showLink}
-              />
-            </li>
-          ))}
-      </ul>
-    )
-  }
+      {hasWarnings &&
+        warnings.map((warning, i) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <li className={styles.item} key={i}>
+            <ValidationListItem
+              kind={kind}
+              truncate={truncate}
+              path={resolvePathTitle(warning.path)}
+              marker={warning}
+              onClick={handleClick}
+              // showLink={showLink}
+            />
+          </li>
+        ))}
+    </ul>
+  )
 }
+
+export default ValidationList

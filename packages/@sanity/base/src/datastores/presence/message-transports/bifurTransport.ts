@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import {map, mergeMapTo, share, switchMapTo, tap, switchMap} from 'rxjs/operators'
-import {Transport, TransportEvent, TransportMessage} from './transport'
+import {Observable, EMPTY} from 'rxjs'
+import {map, share} from 'rxjs/operators'
+import {BifurClient} from '@sanity/bifur-client'
 import {PresenceLocation} from '../types'
-import {EMPTY, fromEvent, merge, Observable, defer} from 'rxjs'
+import {Transport, TransportEvent, TransportMessage} from './transport'
 
 type BifurStateMessage = {
   type: 'state'
@@ -32,7 +32,7 @@ const handleIncomingMessage = (event: IncomingBifurEvent<Location[]>): Transport
     return {
       type: 'rollCall',
       userId: event.i,
-      sessionId: event.session
+      sessionId: event.session,
     }
   }
   if (event.type === 'state') {
@@ -42,7 +42,7 @@ const handleIncomingMessage = (event: IncomingBifurEvent<Location[]>): Transport
       userId: event.i,
       sessionId: sessionId,
       timestamp: new Date().toISOString(),
-      locations
+      locations,
     }
   }
 
@@ -51,30 +51,34 @@ const handleIncomingMessage = (event: IncomingBifurEvent<Location[]>): Transport
       type: 'disconnect',
       userId: event.i,
       sessionId: event.m.session,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
   }
 
   throw new Error(`Got unknown presence event: ${JSON.stringify(event)}`)
 }
 
-export const createBifurTransport = (bifur, sessionId: string): Transport => {
+export const createBifurTransport = (bifur: BifurClient, sessionId: string): Transport => {
   const incomingEvents$: Observable<TransportEvent> = bifur
-    .request('presence')
+    .request<IncomingBifurEvent<Location[]>>('presence')
     .pipe(map(handleIncomingMessage))
 
-  const dispatchMessage = (message: TransportMessage) => {
+  const dispatchMessage = (message: TransportMessage): Observable<undefined> => {
     if (message.type === 'rollCall') {
       return bifur.request('presence_rollcall', {session: sessionId})
     }
+
     if (message.type === 'state') {
       return bifur.request('presence_announce', {
-        data: {locations: message.locations, sessionId}
+        data: {locations: message.locations, sessionId},
       })
     }
+
     if (message.type === 'disconnect') {
       return bifur.request('presence_disconnect', {session: sessionId})
     }
+
+    return EMPTY
   }
 
   return [incomingEvents$.pipe(share()), dispatchMessage]

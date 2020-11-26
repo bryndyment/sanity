@@ -9,7 +9,7 @@ import {
   NEVER,
   Observable,
   of,
-  timer
+  timer,
 } from 'rxjs'
 
 import {
@@ -27,23 +27,24 @@ import {
   takeUntil,
   tap,
   toArray,
-  withLatestFrom
+  withLatestFrom,
 } from 'rxjs/operators'
 import {flatten, groupBy, omit, uniq} from 'lodash'
-import {createBifurTransport} from './message-transports/bifurTransport'
 import {nanoid} from 'nanoid'
 
-import userStore from '../user'
-import {PresenceLocation, Session, User} from './types'
+import userStore, {User} from '../user'
+
 import {bifur} from '../../client/bifur'
+import {connectionStatus$} from '../../connection-status/connection-status-store'
 import {
   DisconnectEvent,
   RollCallEvent,
   StateEvent,
-  TransportEvent
+  TransportEvent,
 } from './message-transports/transport'
 import {mock$} from './mock-events'
-import {connectionStatus$} from '../../connection-status/connection-status-store'
+import {createBifurTransport} from './message-transports/bifurTransport'
+import {DocumentPresence, GlobalPresence, PresenceLocation, Session, UserSessionPair} from './types'
 
 const KEY = 'presence_session_id'
 const generate = () => nanoid(16)
@@ -106,7 +107,7 @@ const reportLocation$ = defer(() => merge(locationChange$, rollCallRequests$)).p
   withLatestFrom(currentLocation$),
   map(([, locations]) => locations),
   auditTime(200),
-  switchMap(locations => reportLocations(locations)),
+  switchMap((locations) => reportLocations(locations)),
   mergeMapTo(EMPTY),
   share()
 )
@@ -116,25 +117,20 @@ const reportLocation$ = defer(() => merge(locationChange$, rollCallRequests$)).p
 const myRollCall$ = defer(() => requestRollCall()).pipe(mergeMapTo(EMPTY))
 
 const connectionChange$ = connectionStatus$.pipe(
-  map(status => status.type),
-  filter(statusType => statusType === 'connected' || statusType === 'error'),
+  map((status) => status.type),
+  filter((statusType) => statusType === 'connected' || statusType === 'error'),
   distinctUntilChanged()
 )
 
 const debugParams$ = concat(of(0), fromEvent(window, 'hashchange')).pipe(
-  map(() =>
-    document.location.hash
-      .toLowerCase()
-      .substring(1)
-      .split(';')
-  )
+  map(() => document.location.hash.toLowerCase().substring(1).split(';'))
 )
 const useMock$ = debugParams$.pipe(
-  filter(args => args.includes('give_me_company')),
+  filter((args) => args.includes('give_me_company')),
   switchMapTo(mock$)
 )
 
-const debugIntrospect$ = debugParams$.pipe(map(args => args.includes('introspect')))
+const debugIntrospect$ = debugParams$.pipe(map((args) => args.includes('introspect')))
 
 const syncEvent$ = merge(myRollCall$, presenceEvents$).pipe(
   filter(
@@ -148,7 +144,7 @@ const stateEventToSession = (stateEvent: StateEvent): Session => {
     lastActiveAt: stateEvent.timestamp,
     locations: stateEvent.locations,
     sessionId: stateEvent.sessionId,
-    userId: stateEvent.userId
+    userId: stateEvent.userId,
   }
 }
 
@@ -162,17 +158,19 @@ const states$: Observable<{[sessionId: string]: Session}> = merge(syncEvent$, us
   )
 )
 
-const allSessions$: Observable<{user: User; session: Session}[]> = connectionChange$.pipe(
-  switchMap(status => (status === 'connected' ? merge(states$, reportLocation$) : NEVER)),
-  map(keyedSessions => Object.values(keyedSessions)),
-  switchMap(sessions => {
-    const userIds = uniq(sessions.map(sess => sess.userId))
+const allSessions$: Observable<UserSessionPair[]> = connectionChange$.pipe(
+  switchMap((status) => (status === 'connected' ? merge(states$, reportLocation$) : NEVER)),
+  map((keyedSessions) => Object.values(keyedSessions)),
+  switchMap((sessions) => {
+    const userIds = uniq(sessions.map((sess) => sess.userId))
     return from(userStore.getUsers(userIds)).pipe(
-      map(users =>
-        sessions.map((session): {user: User; session: Session} => ({
-          user: users.find(res => res.id === session.userId),
-          session: session
-        }))
+      map((users) =>
+        sessions.map(
+          (session): UserSessionPair => ({
+            user: users.find((res) => res.id === session.userId) as User,
+            session: session,
+          })
+        )
       )
     )
   }),
@@ -182,61 +180,62 @@ const allSessions$: Observable<{user: User; session: Session}[]> = connectionCha
   shareReplay({refCount: true, bufferSize: 1})
 )
 
-const concatValues = <T>(prev: T[], curr: T): T[] => prev.concat(curr)
-
-export const globalPresence$ = allSessions$.pipe(
+export const globalPresence$: Observable<GlobalPresence[]> = allSessions$.pipe(
   map((sessions): {user: User; sessions: Session[]}[] => {
     const grouped = groupBy(
-      sessions.map(s => s.session),
-      e => e.userId
+      sessions.map((s) => s.session),
+      (e) => e.userId
     )
 
     return Object.keys(grouped).map((userId): {user: User; sessions: Session[]} => ({
-      user: sessions.find(s => s.user.id === userId).user,
-      sessions: grouped[userId]
+      user: sessions.find((s) => s.user.id === userId)?.user as User,
+      sessions: grouped[userId],
     }))
   }),
   withLatestFrom(debugIntrospect$),
   map(([userAndSessions, debugIntrospect]) =>
-    userAndSessions.filter(userAndSession => {
+    userAndSessions.filter((userAndSession) => {
       if (debugIntrospect) {
         return true
       }
-      const isCurrent = userAndSession.sessions.some(sess => sess.sessionId === SESSION_ID)
-      return !isCurrent || userAndSession.sessions.length > 1
+
+      const isCurrent = userAndSession.sessions.some((sess) => sess.sessionId === SESSION_ID)
+
+      return !isCurrent
     })
   ),
-  map(userAndSessions =>
-    userAndSessions.map(userAndSession => ({
+  map((userAndSessions) =>
+    userAndSessions.map((userAndSession) => ({
       user: userAndSession.user,
+      status: 'online',
       lastActiveAt: userAndSession.sessions.sort()[0]?.lastActiveAt,
-      locations: flatten((userAndSession.sessions || []).map(session => session.locations || []))
-        .map(location => ({
+      locations: flatten((userAndSession.sessions || []).map((session) => session.locations || []))
+        .map((location) => ({
           type: location.type,
           documentId: location.documentId,
           path: location.path,
-          lastActiveAt: location.lastActiveAt
+          lastActiveAt: location.lastActiveAt,
         }))
-        .reduce(concatValues, [])
+        .reduce((prev, curr) => prev.concat(curr), [] as PresenceLocation[]),
     }))
   )
 )
 
-export const documentPresence = (documentId: string) => {
+export const documentPresence = (documentId: string): Observable<DocumentPresence[]> => {
   return allSessions$.pipe(
     withLatestFrom(debugIntrospect$),
     switchMap(([userAndSessions, debugIntrospect]) =>
       from(userAndSessions).pipe(
         filter(
-          userAndSession => debugIntrospect || userAndSession.session.sessionId !== SESSION_ID
+          (userAndSession) => debugIntrospect || userAndSession.session.sessionId !== SESSION_ID
         ),
-        flatMap(userAndSession =>
+        flatMap((userAndSession) =>
           (userAndSession.session.locations || [])
-            .filter(item => item.documentId === documentId)
-            .map(location => ({
+            .filter((item) => item.documentId === documentId)
+            .map((location) => ({
               user: userAndSession.user,
               lastActiveAt: userAndSession.session.lastActiveAt,
-              path: location.path || []
+              path: location.path || [],
             }))
         ),
         toArray()
