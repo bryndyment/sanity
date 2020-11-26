@@ -8,7 +8,7 @@ export default async (args, context) => {
   const aliases = await aliasClient.listAliases(client)
   output.print(
     aliases
-      .map(set => `${ALIAS_PREFIX}${set.name} -> ${set.datasetName || '<unlinked>'}`)
+      .map((set) => `${ALIAS_PREFIX}${set.name} -> ${set.datasetName || '<unlinked>'}`)
       .join('\n')
   )
 }

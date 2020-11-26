@@ -1,4 +1,4 @@
-module.exports = datasetName => {
+module.exports = (datasetName) => {
   if (!datasetName) {
     return 'Alias name is missing'
   }

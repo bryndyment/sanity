@@ -17,10 +17,10 @@ export default async (args, context) => {
   }
 
   const [datasets, fetchedAliases] = await Promise.all([
-    client.datasets.list().then(sets => sets.map(ds => ds.name)),
-    aliasClient.listAliases(client)
+    client.datasets.list().then((sets) => sets.map((ds) => ds.name)),
+    aliasClient.listAliases(client),
   ])
-  const aliases = fetchedAliases.map(da => da.name)
+  const aliases = fetchedAliases.map((da) => da.name)
 
   let aliasName = await (alias || promptForDatasetAliasName(prompt))
   let aliasOutputName = aliasName
@@ -45,7 +45,7 @@ export default async (args, context) => {
     throw new Error(`Dataset "${datasetName}" does not exist `)
   }
 
-  const linkedAlias = fetchedAliases.find(elem => elem.name === aliasName)
+  const linkedAlias = fetchedAliases.find((elem) => elem.name === aliasName)
 
   if (linkedAlias && linkedAlias.datasetName) {
     if (linkedAlias.datasetName === datasetName) {
@@ -57,10 +57,10 @@ export default async (args, context) => {
         type: 'input',
         message: `This alias is linked to dataset <${linkedAlias.datasetName}>. Are you ABSOLUTELY sure you want to link this dataset alias to this dataset?
         \n  Type YES/NO: `,
-        filter: input => `${input}`.toLowerCase(),
-        validate: input => {
+        filter: (input) => `${input}`.toLowerCase(),
+        validate: (input) => {
           return input === 'yes' || 'Ctrl + C to cancel dataset alias link.'
-        }
+        },
       })
     }
   }

@@ -53,5 +53,5 @@ export default {
         throw new Error(`Invalid command provided. Here are the available command <create>, <delete>, <link> and <unlink>.
                          For more guide run the help command 'sanity dataset alias --help'`)
     }
-  }
+  },
 }

@@ -16,9 +16,9 @@ export default async (args, context) => {
   }
 
   const [datasets, aliases, projectFeatures] = await Promise.all([
-    client.datasets.list().then(sets => sets.map(ds => ds.name)),
-    aliasClient.listAliases(client).then(sets => sets.map(ds => ds.name)),
-    client.request({uri: '/features'})
+    client.datasets.list().then((sets) => sets.map((ds) => ds.name)),
+    aliasClient.listAliases(client).then((sets) => sets.map((ds) => ds.name)),
+    client.request({uri: '/features'}),
   ])
 
   let aliasName = await (alias || promptForDatasetAliasName(prompt))
@@ -54,8 +54,9 @@ export default async (args, context) => {
   try {
     await aliasClient.createAlias(client, aliasName, datasetName)
     output.print(
-      `Dataset alias ${aliasOutputName} created ${datasetName &&
-        `and linked to ${datasetName}`} successfully`
+      `Dataset alias ${aliasOutputName} created ${
+        datasetName && `and linked to ${datasetName}`
+      } successfully`
     )
   } catch (err) {
     throw new Error(`Dataset alias creation failed:\n${err.message}`)
