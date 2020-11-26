@@ -15,9 +15,13 @@ Delete Alias
   sanity dataset alias delete <alias-name>
 
 Link Alias
-  sanity dataset alias link
-  sanity dataset alias link <alias-name>
-  sanity dataset alias link <alias-name> <target-dataset>
+  Options
+    --force Skips security prompt and forces link command
+
+  Usage
+    sanity dataset alias link
+    sanity dataset alias link <alias-name>
+    sanity dataset alias link <alias-name> <target-dataset>
 
 Un-link Alias
   sanity dataset alias unlink

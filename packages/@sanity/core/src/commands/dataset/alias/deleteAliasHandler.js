@@ -18,7 +18,7 @@ export default async (args, context) => {
   await prompt.single({
     type: 'input',
     message:
-      'Are you ABSOLUTELY sure you want to delete this dataset alias?\n  Type the name of the dataset alias to confirm delete:',
+      'Are you ABSOLUTELY sure you want to delete this dataset alias?\n  Type the name of the dataset alias to confirm delete: ',
     filter: input => `${input}`.trim(),
     validate: input => {
       return input === alias || 'Incorrect dataset alias name. Ctrl + C to cancel delete.'

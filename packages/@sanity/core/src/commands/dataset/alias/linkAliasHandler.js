@@ -7,6 +7,7 @@ import * as aliasClient from './datasetAliasesClient'
 export default async (args, context) => {
   const {apiClient, output, prompt} = context
   const [, alias, targetDataset] = args.argsWithoutOptions
+  const flags = args.extOptions
   const client = apiClient()
 
   const nameError = alias && validateDatasetAliasName(alias)
@@ -42,15 +43,17 @@ export default async (args, context) => {
       throw new Error(`Dataset alias ${aliasName} already linked to ${datasetName}`)
     }
 
-    await prompt.single({
-      type: 'input',
-      message: `This alias is linked to dataset <${linkedAlias.datasetName}>. Are you ABSOLUTELY sure you want to link this dataset alias to this dataset?
+    if (!flags.force) {
+      await prompt.single({
+        type: 'input',
+        message: `This alias is linked to dataset <${linkedAlias.datasetName}>. Are you ABSOLUTELY sure you want to link this dataset alias to this dataset?
         \n  Type YES/NO: `,
-      filter: input => `${input}`.toLowerCase(),
-      validate: input => {
-        return input === 'yes' || 'Ctrl + C to cancel dataset alias link.'
-      }
-    })
+        filter: input => `${input}`.toLowerCase(),
+        validate: input => {
+          return input === 'yes' || 'Ctrl + C to cancel dataset alias link.'
+        }
+      })
+    }
   }
 
   try {
