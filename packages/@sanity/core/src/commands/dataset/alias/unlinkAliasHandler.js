@@ -1,6 +1,7 @@
 import promptForDatasetAliasName from '../../../actions/dataset/alias/datasetAliasNamePrompt'
 import validateDatasetAliasName from '../../../actions/dataset/alias/validateDatasetAliasName'
 import * as aliasClient from './datasetAliasesClient'
+import {ALIAS_PREFIX} from './datasetAliasesClient'
 
 export default async (args, context) => {
   const {apiClient, output, prompt} = context
@@ -15,16 +16,24 @@ export default async (args, context) => {
   const [fetchedAliases] = await Promise.all([aliasClient.listAliases(client)])
   const aliases = fetchedAliases.map(da => da.name)
 
-  const aliasName = await (alias || promptForDatasetAliasName(prompt))
+  let aliasName = await (alias || promptForDatasetAliasName(prompt))
+  let aliasOutputName = aliasName
+
+  if (aliasName.startsWith(ALIAS_PREFIX)) {
+    aliasName = aliasName.substring(1)
+  } else {
+    aliasOutputName = `${ALIAS_PREFIX}${aliasName}`
+  }
+
   if (!aliases.includes(aliasName)) {
-    throw new Error(`Dataset alias "${aliasName}" does not exist `)
+    throw new Error(`Dataset alias "${aliasOutputName}" does not exist `)
   }
 
   const linkedAlias = fetchedAliases.find(elem => elem.name === aliasName)
 
   if (linkedAlias) {
     if (!linkedAlias.datasetName) {
-      throw new Error(`Dataset alias "${aliasName}" is not linked to a dataset`)
+      throw new Error(`Dataset alias "${aliasOutputName}" is not linked to a dataset`)
     }
 
     await prompt.single({
@@ -40,7 +49,9 @@ export default async (args, context) => {
 
   try {
     const result = await aliasClient.unlinkAlias(client, aliasName)
-    output.print(`Dataset alias ${aliasName} unlinked from ${result.datasetName} successfully`)
+    output.print(
+      `Dataset alias ${aliasOutputName} unlinked from ${result.datasetName} successfully`
+    )
   } catch (err) {
     throw new Error(`Dataset alias link failed:\n${err.message}`)
   }

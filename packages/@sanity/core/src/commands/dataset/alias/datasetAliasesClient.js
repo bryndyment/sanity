@@ -1,5 +1,7 @@
 import validateAlias from '../../../actions/dataset/alias/validateDatasetAliasName'
 
+export const ALIAS_PREFIX = '~'
+
 export function listAliases(client) {
   return client.request({uri: '/aliases'})
 }

@@ -3,6 +3,7 @@ import promptForDatasetAliasName from '../../../actions/dataset/alias/datasetAli
 import validateDatasetAliasName from '../../../actions/dataset/alias/validateDatasetAliasName'
 import validateDatasetName from '../../../actions/dataset/validateDatasetName'
 import * as aliasClient from './datasetAliasesClient'
+import {ALIAS_PREFIX} from './datasetAliasesClient'
 
 export default async (args, context) => {
   const {apiClient, output, prompt} = context
@@ -21,9 +22,17 @@ export default async (args, context) => {
   ])
   const aliases = fetchedAliases.map(da => da.name)
 
-  const aliasName = await (alias || promptForDatasetAliasName(prompt))
+  let aliasName = await (alias || promptForDatasetAliasName(prompt))
+  let aliasOutputName = aliasName
+
+  if (aliasName.startsWith(ALIAS_PREFIX)) {
+    aliasName = aliasName.substring(1)
+  } else {
+    aliasOutputName = `${ALIAS_PREFIX}${aliasName}`
+  }
+
   if (!aliases.includes(aliasName)) {
-    throw new Error(`Dataset alias "${aliasName}" does not exist `)
+    throw new Error(`Dataset alias "${aliasOutputName}" does not exist `)
   }
 
   const datasetName = await (targetDataset || promptForDatasetName(prompt))
@@ -40,7 +49,7 @@ export default async (args, context) => {
 
   if (linkedAlias && linkedAlias.datasetName) {
     if (linkedAlias.datasetName === datasetName) {
-      throw new Error(`Dataset alias ${aliasName} already linked to ${datasetName}`)
+      throw new Error(`Dataset alias ${aliasOutputName} already linked to ${datasetName}`)
     }
 
     if (!flags.force) {
@@ -58,7 +67,7 @@ export default async (args, context) => {
 
   try {
     await aliasClient.updateAlias(client, aliasName, datasetName)
-    output.print(`Dataset alias ${aliasName} linked to ${datasetName} successfully`)
+    output.print(`Dataset alias ${aliasOutputName} linked to ${datasetName} successfully`)
   } catch (err) {
     throw new Error(`Dataset alias link failed:\n${err.message}`)
   }
