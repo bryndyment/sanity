@@ -11,6 +11,7 @@ import deleteDatasetCommand from './dataset/deleteDatasetCommand'
 import exportDatasetCommand from './dataset/exportDatasetCommand'
 import importDatasetCommand from './dataset/importDatasetCommand'
 import copyDatasetCommand from './dataset/copyDatasetCommand'
+import aliasDatasetCommand from './dataset/alias/aliasCommands'
 import documentsGroup from './documents/documentsGroup'
 import getDocumentsCommand from './documents/getDocumentsCommand'
 import queryDocumentsCommand from './documents/queryDocumentsCommand'
@@ -37,20 +38,8 @@ import deleteGraphQLAPICommand from './graphql/deleteGraphQLAPICommand'
 import usersGroup from './users/usersGroup'
 import inviteUserCommand from './users/inviteUserCommand'
 import listUsersCommand from './users/listUsersCommand'
-import linkDatasetAliasCommand from './dataset-alias/linkDatasetAliasCommand'
-import unlinkDatasetAliasCommand from './dataset-alias/unlinkDatasetAliasCommand'
-import createDatasetAliasCommand from './dataset-alias/createDatasetAliasCommand'
-import listDatasetAliasesCommand from './dataset-alias/listDatasetAliasesCommand'
-import deleteDatasetAliasCommand from './dataset-alias/deleteDatasetAliasCommand'
-import aliasDatasetGroup from './dataset-alias/aliasDatasetGroup'
 
 export default [
-  deleteDatasetAliasCommand,
-  listDatasetAliasesCommand,
-  createDatasetAliasCommand,
-  linkDatasetAliasCommand,
-  unlinkDatasetAliasCommand,
-  aliasDatasetGroup,
   buildCommand,
   checkCommand,
   configCheckCommand,
@@ -64,6 +53,7 @@ export default [
   importDatasetCommand,
   deleteDatasetCommand,
   copyDatasetCommand,
+  aliasDatasetCommand,
   corsGroup,
   listCorsOriginsCommand,
   addCorsOriginCommand,
