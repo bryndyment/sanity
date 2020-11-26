@@ -18,7 +18,7 @@ export default async (args, context) => {
     client.datasets.list().then(sets => sets.map(ds => ds.name)),
     aliasClient.listAliases(client)
   ])
-  const aliases = fetchedAliases.map(da =>  da.name)
+  const aliases = fetchedAliases.map(da => da.name)
 
   const aliasName = await (alias || promptForDatasetAliasName(prompt))
   if (!aliases.includes(aliasName)) {
@@ -44,8 +44,7 @@ export default async (args, context) => {
 
     await prompt.single({
       type: 'input',
-      message:
-        `This alias is linked to dataset <${linkedAlias.datasetName}>. Are you ABSOLUTELY sure you want to link this dataset alias to this dataset?
+      message: `This alias is linked to dataset <${linkedAlias.datasetName}>. Are you ABSOLUTELY sure you want to link this dataset alias to this dataset?
         \n  Type YES/NO: `,
       filter: input => `${input}`.toLowerCase(),
       validate: input => {
