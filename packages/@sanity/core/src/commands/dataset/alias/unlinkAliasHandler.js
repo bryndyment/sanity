@@ -29,6 +29,7 @@ export default async (args, context) => {
     throw new Error(`Dataset alias "${aliasOutputName}" does not exist `)
   }
 
+  // get the current alias from the remote alias list
   const linkedAlias = fetchedAliases.find((elem) => elem.name === aliasName)
 
   if (linkedAlias) {
