@@ -4,11 +4,15 @@ declare module 'part:@sanity/base/authentication-fetcher'
 declare module 'part:@sanity/base/client'
 declare module 'part:@sanity/base/user'
 
+// used by @sanity/react-hooks
+declare module 'part:@sanity/base/datastore/document'
+
 declare module 'part:@sanity/base/preview' {
+  import {SchemaType} from '@sanity/types'
   import {Observable} from 'rxjs'
 
   const PreviewBase: React.ComponentType<{
-    type?: object // Schema type
+    type?: SchemaType
     fields?: string[]
     value: any
     children?: (props: any) => React.ComponentType
@@ -17,7 +21,7 @@ declare module 'part:@sanity/base/preview' {
 
   type previewObserver = (
     value: Reference | string,
-    schemaType: object
+    schemaType: SchemaType
   ) => Observable<{snapshot: {title: string}}>
 
   export const observeForPreview: previewObserver
@@ -96,42 +100,43 @@ declare module 'part:@sanity/base/error-outline-icon' {
 }
 
 declare module 'part:@sanity/components/avatar' {
-  export * from '@sanity/components/src/avatar'
+  export * from '@sanity/base/src/__legacy/@sanity/components/avatar'
 }
 
 declare module 'part:@sanity/components/buttons/button-grid'
+declare module 'part:@sanity/components/buttons/button-grid-style'
 declare module 'part:@sanity/components/buttons/default-style'
 declare module 'part:@sanity/components/buttons/default' {
-  export * from '@sanity/components/src/buttons/DefaultButton'
-  export {default} from '@sanity/components/src/buttons/DefaultButton'
+  export * from '@sanity/base/src/__legacy/@sanity/components/buttons/DefaultButton'
+  export {default} from '@sanity/base/src/__legacy/@sanity/components/buttons/DefaultButton'
 }
 
 declare module 'part:@sanity/components/click-outside' {
-  export * from '@sanity/components/src/clickOutside'
+  export * from '@sanity/base/src/__legacy/@sanity/components/clickOutside'
 }
 
 declare module 'part:@sanity/components/dialogs/popover-style'
 declare module 'part:@sanity/components/dialogs/popover' {
-  export {default} from '@sanity/components/src/dialogs/PopoverDialog'
+  export {default} from '@sanity/base/src/__legacy/@sanity/components/dialogs/PopoverDialog'
 }
 
 declare module 'part:@sanity/components/layer' {
-  export * from '@sanity/components/src/layer'
+  export * from '@sanity/base/src/__legacy/@sanity/components/layer'
 }
 
 declare module 'part:@sanity/components/loading/spinner-style'
 declare module 'part:@sanity/components/loading/spinner' {
-  export {default} from '@sanity/components/src/loading/Spinner'
+  export {default} from '@sanity/base/src/__legacy/@sanity/components/loading/Spinner'
 }
 
 declare module 'part:@sanity/components/popover' {
-  export * from '@sanity/components/src/popover'
+  export * from '@sanity/base/src/__legacy/@sanity/components/popover'
 }
 
 declare module 'part:@sanity/components/portal' {
-  export * from '@sanity/components/src/portal'
+  export * from '@sanity/base/src/__legacy/@sanity/components/portal'
 }
 
 declare module 'part:@sanity/components/tooltip' {
-  export * from '@sanity/components/src/tooltip'
+  export * from '@sanity/base/src/__legacy/@sanity/components/tooltip'
 }

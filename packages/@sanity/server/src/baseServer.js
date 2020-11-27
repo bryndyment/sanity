@@ -23,8 +23,9 @@ const assetify = (assetPath, hashes) => ({
   hash: hashes[assetPath],
 })
 
-const getDocumentComponent = (basePath) =>
-  resolveParts({basePath}).then((res) => {
+const getDocumentComponent = (basePath, isSanityMonorepo = false) => {
+  // Explicitly pass false here to not use uncompiled JSX etc
+  return resolveParts({basePath, isSanityMonorepo}).then((res) => {
     const part = res.implementations[docPart]
     if (!part) {
       throw new Error(
@@ -34,16 +35,17 @@ const getDocumentComponent = (basePath) =>
 
     return getDefaultModule(requireUncached(part[0].path))
   })
+}
 
 export function getBaseServer() {
   return express()
 }
 
-export function getDocumentElement({project, basePath, hashes}, props = {}) {
+export function getDocumentElement({project, basePath, hashes, isSanityMonorepo}, props = {}) {
   const assetHashes = hashes || {}
 
   // Project filesystem base path
-  return getDocumentComponent(basePath).then((Document) =>
+  return getDocumentComponent(basePath, isSanityMonorepo).then((Document) =>
     React.createElement(
       Document,
       Object.assign(
@@ -86,13 +88,14 @@ export function applyStaticRoutes(app, config = {}) {
 }
 
 export function callInitializers(config) {
-  resolveParts({config}).then((res) => {
+  resolveParts(config).then((res) => {
     const parts = res.implementations[initPart]
     if (!parts) {
       return
     }
 
     res.implementations[initPart]
+      // eslint-disable-next-line import/no-dynamic-require
       .map((part) => getDefaultModule(require(part.path)))
       .forEach((initializer) => initializer(config))
   })

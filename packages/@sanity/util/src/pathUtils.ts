@@ -135,7 +135,7 @@ export function trimRight(suffix: Path, path: Path): Path {
   return path.slice(0, pathLen - i)
 }
 
-export function trimChildPath(path, childPath) {
+export function trimChildPath(path: Path, childPath: Path): Path {
   return startsWith(path, childPath) ? trimLeft(path, childPath) : EMPTY_PATH
 }
 
@@ -203,7 +203,7 @@ function normalizeIndexSegment(segment: string): PathSegment {
 
 function normalizeKeySegment(segment: string): KeyedSegment {
   const segments = segment.match(reKeySegment)
-  return {_key: segments[1]}
+  return {_key: segments![1]}
 }
 
 function normalizeIndexTupleSegment(segment: string): IndexTuple {

@@ -1,10 +1,12 @@
 {
   "name": "@sanity/server",
-  "version": "2.0.1",
+  "version": "2.0.9",
   "description": "Webserver dedicated to serving Sanity, allowing a smooth development experience",
   "main": "lib/server.js",
   "scripts": {
+    "build": "babel src --copy-files --out-dir lib",
     "clean": "rimraf lib",
+    "prebuild": "npm run clean",
     "start": "node bin/sanity-server.js",
     "start-dev": "node bin/sanity-server.js --dev"
   },
@@ -43,9 +45,9 @@
     "@hot-loader/react-dom": "^16.9.0-4.12.11",
     "@sanity/css-loader": "^0.28.12",
     "@sanity/eventsource": "2.0.1",
-    "@sanity/resolver": "2.0.1",
-    "@sanity/webpack-integration": "2.0.1",
-    "@sanity/webpack-loader": "2.0.1",
+    "@sanity/resolver": "2.0.9",
+    "@sanity/webpack-integration": "2.0.9",
+    "@sanity/webpack-loader": "2.0.9",
     "babel-loader": "^8.0.6",
     "eventsource-polyfill": "^0.9.6",
     "express": "^4.16.1",
@@ -72,14 +74,15 @@
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "cross-env": "^5.0.5",
+    "find-config": "^1.0.0",
     "prop-types": "^15.6.0",
-    "react": "16.9.0",
-    "react-dom": "^16.9.0",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
     "rimraf": "^2.7.1"
   },
   "peerDependencies": {
     "prop-types": "^15.6 || ^16",
-    "react": "^16.9",
-    "react-dom": "^16.9"
+    "react": "^16.9 || ^17",
+    "react-dom": "^16.9 || ^17"
   }
 }

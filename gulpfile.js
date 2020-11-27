@@ -8,16 +8,13 @@ const changed = require('gulp-changed')
 const ts = require('gulp-typescript')
 const filter = require('gulp-filter')
 const {flatten} = require('lodash')
-const log = require('fancy-log')
 const notify = require('gulp-notify')
 const plumber = require('gulp-plumber')
 const chalk = require('chalk')
 const babel = require('gulp-babel')
-const through = require('through2')
 const {getPackagesOrderedByTopology} = require('./scripts/utils/getPackagesOrderedByTopology')
 
 const {getPackagePaths} = require('./scripts/utils/getPackagePaths')
-const {runSanityStart} = require('./scripts/utils/runSanityStart')
 
 const SRC_DIR = 'src'
 const DEST_DIR = 'lib'
@@ -25,16 +22,15 @@ const DEST_DIR = 'lib'
 // Regexes/names of packages that doesn't follow the src/lib convention
 // or packages that does their own build (e.g. studios)
 const IGNORED_PACKAGES = [
+  'examples/storybook',
+  /examples\/.*-studio/,
+  'packages/@sanity/date-input',
+  'packages/@sanity/eventsource',
   'packages/@sanity/generate-help-url',
   'packages/@sanity/plugin-loader',
-  'packages/@sanity/eventsource',
-  'packages/@sanity/date-input',
-  'packages/@sanity/uuid',
-  'packages/eslint-config-sanity',
   'packages/create-sanity',
-  'packages/storybook',
+  'packages/eslint-config-sanity',
   'packages/sanity',
-  /packages\/.*-studio/,
 ]
 
 const PACKAGE_PATHS = getPackagePaths().filter((pkgPath) =>
@@ -100,7 +96,7 @@ function notifyErrors(title) {
 
 function buildTypeScript(packageDir) {
   return withDisplayName(compileTaskName('dts', packageDir), () => {
-    const project = ts.createProject(path.join(packageDir, 'tsconfig.json'))
+    const project = ts.createProject(path.join(packageDir, 'tsconfig.dist.json'))
     return project
       .src()
       .pipe(notifyErrors(`Error in ${path.relative('packages', packageDir)}`))
@@ -151,38 +147,6 @@ const watchJSAndAssets = parallel(
     )
   )
 )
-
-function studioTask(name, port) {
-  return series(
-    buildJSAndAssets,
-    parallel(
-      watchJSAndAssets,
-      function runStudio() {
-        log(`Starting ${name}…`)
-        runSanityStart(path.join(__dirname, 'packages', name), port).pipe(
-          through((data, enc, cb) => {
-            log(data.toString())
-            cb()
-          })
-        )
-      },
-      series(buildTS, watchTS)
-    )
-  )
-}
-
-;[
-  ['test-studio', '3333'],
-  ['movies-studio', '3334'],
-  ['example-studio', '3335'],
-  ['blog-studio', '3336'],
-  ['ecommerce-studio', '3337'],
-  ['clean-studio', '3338'],
-  ['design-studio', '4000'],
-  ['storybook', '9002'],
-].forEach(([name, port]) => {
-  exports[name] = studioTask(name, port)
-})
 
 exports.build = parallel(buildJSAndAssets, buildTS)
 exports.watch = series(parallel(buildJSAndAssets, buildTS), parallel(watchJSAndAssets, watchTS))

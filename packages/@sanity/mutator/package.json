@@ -1,12 +1,16 @@
 {
   "name": "@sanity/mutator",
-  "version": "2.0.1",
+  "version": "2.0.9",
   "description": "A set of models to make it easier to utilize the powerful real time collaborative features of Sanity",
   "main": "lib/index.js",
   "scripts": {
+    "build": "babel src --extensions '.js,.jsx,.ts,.tsx' --copy-files --out-dir lib",
     "clean": "rimraf lib",
     "test": "tap -t120 test/*.test.ts",
-    "perf": "node ./perf/run.js"
+    "perf": "node ./perf/run.js",
+    "prebuild": "npm run clean",
+    "type-check": "tsc --noEmit -p tsconfig.dist.json",
+    "type-check:src": "tsc --noEmit"
   },
   "keywords": [
     "sanity",

@@ -1,9 +1,9 @@
 {
   "extends": "../../../tsconfig",
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["test/**/*.ts"],
+  "include": ["src"],
   "compilerOptions": {
-    "rootDir": "src",
+    // todo: we need to disable noImplicitAny in a transition phase and should be removed eventually
+    "noImplicitAny": false,
     "jsx": "react",
     "outDir": "./lib",
     "plugins": [

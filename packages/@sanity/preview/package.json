@@ -1,14 +1,16 @@
 {
   "name": "@sanity/preview",
-  "version": "2.0.5",
+  "version": "2.0.9",
   "description": "Utilities for previewing content in Sanity",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "clean": "rimraf lib",
     "compile": "babel src --copy-files --out-dir lib",
     "compile:watch": "npm run compile -- --watch",
     "test": "#todo: jest",
-    "test:watch": "jest --watchAll"
+    "test:watch": "jest --watchAll",
+    "type-check": "tsc --noEmit -p tsconfig.dist.json",
+    "type-check:src": "tsc --noEmit"
   },
   "keywords": [
     "sanity",
@@ -25,6 +27,7 @@
   },
   "dependencies": {
     "@sanity/image-url": "^0.140.19",
+    "@sanity/types": "^2.0.1",
     "lodash": "^4.17.15",
     "observable-props": "^2.0.0",
     "react-props-stream": "^1.0.0",
@@ -41,7 +44,7 @@
   },
   "peerDependencies": {
     "prop-types": "^15.6 || ^16",
-    "react": "^16.9"
+    "react": "^16.9 || ^17"
   },
   "homepage": "https://www.sanity.io/",
   "repository": {

@@ -1,6 +1,6 @@
 {
   "name": "@sanity/diff",
-  "version": "2.0.1",
+  "version": "2.0.9",
   "description": "Generates diffs between documents and primitive types",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "test": "jest",
-    "posttest": "tsc --noEmit",
+    "posttest": "tsc --noEmit -p tsconfig.dist.json",
     "clean": "rimraf lib coverage"
   },
   "keywords": [

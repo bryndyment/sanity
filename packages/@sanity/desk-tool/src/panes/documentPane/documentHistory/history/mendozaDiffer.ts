@@ -1,14 +1,13 @@
+import {incremental} from 'mendoza'
 import {Chunk, Annotation} from '@sanity/field/diff'
 import {Input, ArrayInput, ObjectInput, StringInput, wrap, Diff, diffInput} from '@sanity/diff'
-import {Value, ArrayContent, ObjectContent, StringContent} from 'mendoza/lib/incremental-patcher'
 import {Timeline} from './timeline'
 import {isSameAnnotation} from './utils'
-import {Transaction} from './types'
 
 export type Meta = {chunk: Chunk; transactionIndex: number} | null
 
 export type AnnotationExtractor = {
-  fromValue(value: Value<Meta>): Annotation
+  fromValue(value: incremental.Value<Meta>): Annotation
   fromMeta(meta: Meta): Annotation
 }
 
@@ -19,11 +18,11 @@ class ArrayContentWrapper implements ArrayInput<Annotation> {
   annotation: Annotation
   extractor: AnnotationExtractor
 
-  private content: ArrayContent<Meta>
+  private content: incremental.ArrayContent<Meta>
   private elements: Input<Annotation>[] = []
 
   constructor(
-    content: ArrayContent<Meta>,
+    content: incremental.ArrayContent<Meta>,
     value: unknown[],
     annotation: Annotation,
     extractor: AnnotationExtractor
@@ -61,11 +60,11 @@ class ObjectContentWrapper implements ObjectInput<Annotation> {
   annotation: Annotation
   extractor: AnnotationExtractor
 
-  private content: ObjectContent<Meta>
+  private content: incremental.ObjectContent<Meta>
   private fields: Record<string, Input<Annotation>> = {}
 
   constructor(
-    content: ObjectContent<Meta>,
+    content: incremental.ObjectContent<Meta>,
     value: Record<string, unknown>,
     annotation: Annotation,
     extractor: AnnotationExtractor
@@ -94,10 +93,10 @@ class StringContentWrapper implements StringInput<Annotation> {
   annotation: Annotation
   extractor: AnnotationExtractor
 
-  private content: StringContent<Meta>
+  private content: incremental.StringContent<Meta>
 
   constructor(
-    content: StringContent<Meta>,
+    content: incremental.StringContent<Meta>,
     value: string,
     annotation: Annotation,
     extractor: AnnotationExtractor
@@ -136,7 +135,6 @@ class StringContentWrapper implements StringInput<Annotation> {
 
         // If the end of the slice is before this part, then we're guaranteed
         // that there are no more parts.
-        // eslint-disable-next-line max-depth
         if (subEnd <= 0) break
 
         push(part.value.slice(subStart, subEnd), this.extractor.fromValue(part))
@@ -150,7 +148,7 @@ class StringContentWrapper implements StringInput<Annotation> {
 }
 
 function wrapValue(
-  value: Value<Meta>,
+  value: incremental.Value<Meta>,
   raw: unknown,
   extractor: AnnotationExtractor
 ): Input<Annotation> {
@@ -214,12 +212,13 @@ function annotationForTransactionIndex(timeline: Timeline, idx: number, chunkIdx
   }
 }
 
+// eslint-disable-next-line max-params
 export function diffValue(
   timeline: Timeline,
   firstChunk: Chunk | null,
-  from: Value<Meta>,
+  from: incremental.Value<Meta>,
   fromRaw: unknown,
-  to: Value<Meta>,
+  to: incremental.Value<Meta>,
   toRaw: unknown
 ): Diff<Annotation> {
   const fromInput = wrapValue(from, fromRaw, {

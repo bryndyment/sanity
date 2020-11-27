@@ -1,11 +1,13 @@
 {
   "name": "@sanity/resolver",
-  "version": "2.0.1",
+  "version": "2.0.9",
   "description": "Resolves parts and plugins from a Sanity configuration",
   "main": "lib/resolver.js",
   "scripts": {
+    "build": "babel src --copy-files --out-dir lib",
     "clean": "rimraf lib coverage",
     "coverage": "nyc --report=lcov --report=text _mocha -- test/**/*.test.js",
+    "prebuild": "npm run clean",
     "test": "#todo: mocha test/**/*.test.js"
   },
   "engines": {
@@ -40,8 +42,8 @@
     "rimraf": "^2.7.1"
   },
   "dependencies": {
-    "@sanity/generate-help-url": "2.0.1",
-    "@sanity/util": "2.0.1",
+    "@sanity/generate-help-url": "2.0.9",
+    "@sanity/util": "2.0.9",
     "fs-extra": "^6.0.1",
     "lodash": "^4.17.15",
     "path-exists": "^3.0.0",

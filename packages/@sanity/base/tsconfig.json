@@ -1,11 +1,13 @@
 {
   "extends": "../../../tsconfig",
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["test/**/*.ts"],
+  "include": ["src"],
   "compilerOptions": {
     "outDir": "./lib",
-    "strict": false,
+    // -- strictness options we need to disable in a transition period.
+    "noImplicitAny": false,
     "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+    // --
     "jsx": "react",
     "plugins": [
       {
@@ -14,12 +16,6 @@
           "customMatcher": "\\.css$"
         }
       }
-    ],
-
-    "baseUrl": "./src",
-    "paths": {
-      "part:@sanity/base/datastore/history": ["./datastores/history"],
-      "part:@sanity/base/user": ["./datastores/user"]
-    }
+    ]
   }
 }

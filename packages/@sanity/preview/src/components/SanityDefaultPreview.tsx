@@ -11,7 +11,7 @@ import PreviewComponentBlockImage from 'part:@sanity/components/previews/block-i
 import sanityClient from 'part:@sanity/base/client'
 import fileIcon from 'part:@sanity/base/file-icon'
 
-const previewComponentMap = {
+const previewComponentMap: {[key: string]: React.ComponentType<any>} = {
   default: PreviewComponentDefault,
   card: PreviewComponentCard,
   media: PreviewComponentMedia,
@@ -49,12 +49,14 @@ export default class SanityDefaultPreview extends React.PureComponent<Props> {
     return (
       <img
         alt={value.title}
-        src={imageBuilder
-          .image(media)
-          .width(dimensions.width || 100)
-          .height(dimensions.height || 100)
-          .fit(dimensions.fit)
-          .url()}
+        src={
+          imageBuilder
+            .image(media)
+            .width(dimensions.width || 100)
+            .height(dimensions.height || 100)
+            .fit(dimensions.fit)
+            .url() || ''
+        }
       />
     )
   }
