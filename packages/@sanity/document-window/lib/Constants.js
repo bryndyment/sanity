@@ -1,6 +1,6 @@
-"use strict";
+'use strict'
 
-var isNode = require('detect-node');
+var isNode = require('detect-node')
 
 module.exports = {
   FRONT: 'front',
@@ -9,5 +9,5 @@ module.exports = {
   DESCENDING: 'desc',
   DEFAULT_DEBOUNCE_MS: isNode ? 0 : 100,
   DEFAULT_LIMIT: 50,
-  DEFAULT_BUFFER_FACTOR: 3
-};
+  DEFAULT_BUFFER_FACTOR: 3,
+}
